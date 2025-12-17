@@ -1,0 +1,690 @@
+
+
+
+/* ------------ */
+/* Layout       */
+.main-area {
+    grid-area: main-area;
+    height: 100%;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.main-container {
+    display: grid;
+    grid-template-columns: max(10%, 200px) 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: "menu main-area";
+    height: 100vh;
+    overflow: hidden;
+}
+/* Layout       */
+/* ------------ */
+
+
+/* ------------ */
+/* Menu         */
+.side-menu {
+    grid-area: menu;
+    background: gray;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.resources-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 4rem;
+}
+
+.resources-menu ul {
+    list-style-type: none;
+}
+
+.resources-menu li {
+    margin-bottom: 0;
+}
+
+.resources-menu a {
+    transition: all 0.2s ease;
+    color: white;
+    padding: 2rem 2rem;
+    display: block;
+}
+
+.resources-menu a:hover {
+    color: gray;
+    background: #333;
+    display: block;
+}
+
+.account-management {
+    margin: 2rem;
+    flex-shrink: 0;
+}
+
+.account-management button.button {
+    display: flex;
+    background: #444;
+    color: #ccc;
+}
+
+.account-management button.button:hover {
+    background: #222;
+    color: #eee;
+}
+
+.account-management button i {
+    margin-top: 10px;
+    margin-right: 2.5rem;
+}
+/* Menu         */
+/* ------------ */
+
+
+/* ------------ */
+/* Listing      */
+.resources-listing {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.resources-listing header,
+.resources-listing aside,
+.resources-listing .resources-listing-results {
+    padding: 0 4rem;
+}
+
+.resources-listing header {
+    padding-top: 4rem;
+}
+
+.resources-listing header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-right: 4rem;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.resources-listing .listing-actions {
+    min-width: 450px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.resources-listing .listing-breadcrumbs {
+    min-width: 450px;
+}
+
+.resources-listing .record-count-info {
+    display: flex;
+}
+
+.resources-listing header *:not(:last-child) {
+    margin-right: 1rem;
+}
+
+.resources-listing .resources-listing-results {
+    padding-bottom: 4rem;
+}
+
+.resources-listing aside {
+    padding-top: 2rem;
+    box-shadow: 0px 0px 8px 0 rgba(0,0,0,0.3);
+}
+
+.resources-listing > div {
+    overflow-y: auto;
+    flex: 0 1 100%;
+    padding-bottom: 4rem;
+}
+
+.resources-listing .resources-listing-results {
+    overflow-x: auto;
+}
+
+.resources-listing th {
+    background: white;
+    position: sticky;
+    top: 0;
+}
+
+.resources-listing td, .resources-listing th {
+    padding-left: 1rem;
+}
+
+.resources-listing .listing-row:hover {
+    background-color: #eee;
+    transition: all 0.1s ease-out;
+}
+
+.upload-preview td pre,
+.upload-preview td span:not(.error) {
+    /* text-overflow: hidden; */
+    line-clamp: 1;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1; /* number of lines to show */
+    overflow: hidden;
+}
+
+.resources-listing .sort {
+    cursor: pointer;
+    user-select: none;
+}
+
+.resources-listing .sort i {
+    transition: all 0.2s ease;
+    transform: scale(0.6);
+}
+
+.resources-listing .sort .desc {
+    color: inherit;
+    transform: scale(0.6) rotate(90deg) translateX(2px);
+}
+
+.resources-listing .sort .asc {
+    color: inherit;
+    transform: scale(0.6) rotate(-90deg) translateX(8px);
+}
+
+.listing-controls {
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.listing-controls .search {
+    overflow-y: auto;
+}
+
+.listing-controls .controls {
+    display: flex;
+    justify-content: space-between;
+    z-index: 2;
+}
+
+.toggle-button i {
+    color: inherit;
+    transition: all 0.2s ease;
+    transform: scale(0.6) translateX(2px);
+}
+
+.toggle-button.open i {
+    transform: scale(0.6) rotate(90deg) translateX(2px);
+}
+
+.record-count-info {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.page-select {
+    width: auto;
+    min-width: max-content;
+    padding-left: 1rem;
+    padding-right: 4rem;
+}
+/* Listing      */
+/* ------------ */
+
+
+/* ------------ */
+/* Filter       */
+.search {
+}
+
+.search .actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.filters {
+    margin-bottom: 2rem;
+}
+
+button.add-filter {
+    color: #508c8a;
+    padding: 0;
+}
+
+.add-filter .icono-plus {
+    color: #508c8a;
+    margin-left: 2rem;
+}
+
+.add-filter:hover .icono-plus {
+    color: #606c76;
+}
+
+button.filter-remove {
+    padding: 0;
+}
+
+.filter-remove i {
+    color: #af6868;
+}
+
+.filter-remove:hover i {
+    color: #606c76;
+}
+
+.filter {
+    background:  #f3f3f3;
+    border-radius: 5px;
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem 1rem 0 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.filter-inputs {
+    flex: 1 1 0;
+    gap: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.filter-inputs > div:not(.checkboxes) {
+    display: flex;
+}
+
+.filter-inputs > * {
+    flex: 1 1 0;
+}
+
+.filter-inputs > div > span {
+    margin: 0.6rem 1rem;
+}
+
+.filter.enum .checkboxes {
+   flex: 1 1 100%;
+   column-count: 8;
+   column-gap: 2rem;
+   margin-top: -2rem;
+   margin-bottom: 1rem;
+}
+
+.filter.bool select {
+    margin-right: 0;
+}
+
+.filter input, .filter select {
+    background-color: white;
+}
+/* Filter       */
+/* ------------ */
+
+
+
+/* ------------ */
+/* Form         */
+.field .error {
+    color: red;
+}
+
+.field.with-error input {
+    border-color: red;
+}
+
+.field.required label:after {
+    color: #faa;
+    content: " (req.)"
+}
+
+.autocomplete-input {
+    display: flex;
+}
+
+.field .association-link {
+    min-width: 4rem;
+    max-width: 10rem;
+    padding: .6rem 1.0rem .7rem;
+    text-overflow: ellipsis;
+}
+
+input, textarea, .grow-wrap > textarea, .grow-wrap::after {
+    font-family: 'Roboto', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    font: 400 13.3333px Arial;
+}
+
+input[type=checkbox] {
+    margin-right: 1rem;
+}
+
+label {
+   user-select: none;
+}
+/* Form         */
+/* ------------ */
+
+
+/* ----------------- */
+/* Textarea autogrow */
+/* https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas */
+.grow-wrap {
+  display: grid;
+}
+
+.grow-wrap::after {
+  content: attr(data-replicated-value) " ";
+  white-space: pre-wrap;
+  visibility: hidden;
+  padding: 2rem;
+}
+
+.grow-wrap > textarea {
+  resize: none;
+  overflow: hidden;
+  height: inherit !important;
+}
+
+.grow-wrap > textarea, .grow-wrap::after {
+  grid-area: 1 / 1 / 2 / 2;
+}
+/* Textarea autogrow */
+/* ----------------- */
+
+
+/* ------------ */
+/* Notification */
+.notification {
+    position: fixed;
+    display: flex;
+    top: 4rem;
+    right: 4rem;
+    padding: 0.5rem 2rem;
+    border-radius: 0.5rem;
+    justify-content: space-between;
+    z-index: 2000;
+}
+
+.notification .close {
+    justify-content: flex-end;
+}
+
+.notification p {
+    margin-top: 0.4rem;
+    padding: 1rem 2rem;
+}
+
+.notification.confirmation {
+    background: rgba(204, 229, 189, 0.6);
+}
+
+.notification.confirmation, .notification.confirmation i {
+    color: #698658;
+}
+
+i.icono-cross {
+    cursor: pointer;
+}
+/* Notification      */
+/* ------------ */
+a:hover {
+    text-decoration: underline;
+}
+
+
+/* ------------ */
+/* Scrollbar    */
+::-webkit-scrollbar {
+    width: 1.2rem;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #ededed;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: darkgrey;
+    outline: 1px solid slategrey;
+}
+/* Scrollbar    */
+/* ------------ */
+
+
+/* ---------- */
+/* Auth modal */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: white;
+    height: 100vh;
+    width: 100vw;
+}
+
+.overlay-waiting {
+    display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-waiting i {
+    transform: scale(5);
+}
+
+
+.auth-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.auth-modal .auth-form {
+    width: 500px;
+}
+/* Auth modal */
+/* ---------- */
+
+.form-error-message {
+    padding: 10px;
+    margin-bottom: 15px;
+    color: #950000;
+    background: #eedbdb;
+    border-radius: 5px;
+}
+
+.login-banner {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f4f4f4;
+    border-radius: 5px;
+    line-height: 1.5;
+}
+
+.login-banner p {
+    margin: 0;
+}
+
+.login-banner p + p {
+    margin-top: 10px;
+}
+
+
+.card {
+    padding: 2rem;
+    background: #f4f4f4;
+    border-radius: 1rem;
+}
+
+
+/* ---------- */
+/* Detail */
+.main-area > *:not(.resources-listing) {
+    padding: 4rem 4rem 10rem 4rem;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.record-detail .action {
+    display: flex;
+}
+
+.record-detail .associations {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    gap: 1rem;
+}
+
+.record-detail .associations .association {
+    flex-grow: 1;
+}
+/* Detail */
+/* ---------- */
+
+
+
+
+/* ---------- */
+/* Buttons */
+a.button:hover {
+    text-decoration: none;
+}
+
+
+.button-danger {
+    background-color: #950000;
+    border-color: #950000;
+}
+
+.button-danger.button-clear,
+.button-danger.button-outline {
+    background-color: transparent;
+    color: #950000;
+}
+
+.button-danger.button-clear {
+    border-color: transparent;
+}
+/* Buttons */
+/* ---------- */
+
+
+/* ---------- */
+/* Modal */
+.modal-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.4);
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.modal-dialog {
+    box-sizing: content-box;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    padding: 2rem 4rem;
+    border-radius: 1rem;
+    margin-bottom: 20rem;
+    max-height: 100vh;
+}
+/* Modal */
+/* ---------- */
+
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.actions button, .actions a {
+    margin-left: 1.5rem;
+}
+
+/* ---------- */
+/* CSV upload */
+.upload-preview .modal-dialog {
+    max-height: 80vh;
+    margin: 5rem;
+}
+
+
+.csv-records-preview {
+    overflow-y: auto;
+    margin-bottom: 5rem;
+}
+
+.resources-listing .csv-records-preview table {
+    max-width: 90vw;
+    table-layout: auto;
+    margin-bottom: 2rem;
+}
+
+
+.upload-preview td {
+    padding: 0 2rem;
+}
+
+.upload-preview th {
+    padding: 1rem 2rem;
+}
+
+
+.upload-preview td pre {
+    margin: 0;
+}
+
+.upload-preview table td:first-child {
+    background: #dedede;
+}
+
+.upload-preview tr.with-errors {
+    background: #fff3f3;
+}
+
+.upload-preview .error {
+    color: red;
+}
+
+.upload-preview .disclaimer {
+    text-align: right;
+}
+/* CSV upload */
+/* ---------- */
+
+
+
+/* ---------- */
+/* Breadcrumbs */
+.breadcrumbs {
+    font-size: 2rem;
+}
+
+.breadcrumbs .current-segment, .breadcrumbs .current-segment ~ a {
+    font-size: 3rem;
+    font-weight: bold;
+}
+/* Breadcrumbs */
+/* ---------- */
+
+
+/* -------------- */
+/* Skeleton loader */
+.unloaded-page {
+    background: #fafafa;
+}
+/* Skeleton loader */
+/* -------------- */

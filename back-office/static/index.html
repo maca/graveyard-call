@@ -1,0 +1,35 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Graveyard - Back Office</title>
+  <style>body { padding: 0; margin: 0; }</style>
+  <link rel="stylesheet" href="/back-office/icono.min.css" />
+  <link rel="stylesheet" href="/back-office/milligram.min.css" />
+  <link rel="stylesheet" href="/back-office/postgrest-admin.css" type="text/css" media="screen" />
+  <script src="/back-office/postgrest-admin.min.js"></script>
+</head>
+
+<body>
+    <script type="text/javascript">
+        console.log("token: ", sessionStorage.getItem("jwt"))
+        const app = Elm.Main.init({
+            flags: {
+                jwt: sessionStorage.getItem("jwt"),
+                host: "http://localhost:4000/api",
+                clientHeaders: {},
+                "loginBannerText": "**Welcome to Graveyard Back Office!**\n\nA back-office interface for managing submissions.\n\nLogin with user: 'user@example.com' and password: 'password'.\n"
+            }
+        })
+
+        app.ports.loggedIn.subscribe(jwt => {
+            console.log("got token: ", jwt)
+            sessionStorage.setItem("jwt", jwt)
+        });
+
+        app.ports.loggedOut.subscribe(_ => {
+            sessionStorage.removeItem("jwt")
+        });
+    </script>
+<body>
+</html>

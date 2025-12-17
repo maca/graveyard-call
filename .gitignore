@@ -1,0 +1,16 @@
+# Database
+database/pgdata/
+
+# Elm
+submissions/elm-stuff/
+
+# Nix
+result
+result-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
