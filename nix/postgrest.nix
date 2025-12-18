@@ -5,8 +5,8 @@ let
   postgrestConf = pkgs.writeText "postgrest.conf" ''
     # db-uri is set via PGRST_DB_URI environment variable in run-postgrest script
     db-uri = "postgres:///?host=database/pgdata&dbname=graveyard"
-    db-schemas = "public"
-    db-anon-role = "web_anon"
+    db-schemas = "graveyard"
+    db-anon-role = "anonymous"
     jwt-secret = "DL+P8+muauKgOSqRKqIKMkjcUpLZ5ajXScgA965i/Bg="
     server-unix-socket = "/tmp/postgrest-graveyard.sock"
   '';

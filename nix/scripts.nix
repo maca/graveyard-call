@@ -27,11 +27,9 @@ let
 
     # Start elm-watch for submissions app in background
     echo "Starting elm-watch service for submissions..."
-    cd submissions
     { elm-watch hot 2>&1 1>&3 | sed 's/.*/\x1b[31mELM-WATCH: &\x1b[0m/' >&2; } 3>&1 | sed 's/.*/\x1b[32mELM-WATCH: &\x1b[0m/' &
     ELM_WATCH_PID=$!
     PIDS="$PIDS $ELM_WATCH_PID"
-    cd ..
     sleep 2
 
     # Start Nginx in background
@@ -76,8 +74,8 @@ let
     echo "- Nginx: Web server on http://localhost:$PORT"
     echo ""
     echo "Access the application:"
+    echo "  - Submissions: http://localhost:$PORT/"
     echo "  - Back-office: http://localhost:$PORT/back-office/"
-    echo "  - Submissions: http://localhost:$PORT/submissions/"
     echo "  - API: http://localhost:$PORT/api/"
     echo ""
     echo "Services running with PIDs: $PIDS"

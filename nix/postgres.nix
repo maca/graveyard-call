@@ -45,8 +45,8 @@ let
   load-sql = pkgs.writeShellScriptBin "load-sql" ''
     set -xeuo pipefail
     ${pgEnvSetup}
-    ${postgresql}/bin/psql --host="$PGHOST" -d graveyard -f "$PWD/database/roles.sql"
-    ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$PWD/database/permissions.sql"
+    ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$PWD/database/schema.sql"
+    ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$PWD/database/config.sql"
   '';
 
   setup = pkgs.writeShellScriptBin "setup" ''

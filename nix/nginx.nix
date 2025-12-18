@@ -12,6 +12,7 @@ let
     }
 
     http {
+      client_max_body_size 10M;  # Increase to your needs
       include ${pkgs.nginx}/conf/mime.types;
       default_type application/octet-stream;
 
@@ -27,30 +28,22 @@ let
         listen 4000;
         server_name localhost;
 
-        # Serve back-office static files
+        location / {
+          alias SUBMISSIONS_PATH/;
+          try_files $uri $uri/ /index.html;
+        }
+
         location /back-office/ {
           alias BACK_OFFICE_PATH/;
           try_files $uri $uri/ /back-office/index.html;
         }
 
-        # Serve submissions static files
-        location /submissions/ {
-          alias SUBMISSIONS_PATH/;
-          try_files $uri $uri/ /submissions/index.html;
-        }
-
-        # Proxy PostgREST API
         location /api/ {
           proxy_pass http://unix:/tmp/postgrest-graveyard.sock:/;
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # Default to back-office
-        location / {
-          return 301 /back-office/;
         }
       }
     }
@@ -64,10 +57,10 @@ let
 
     # Replace placeholder paths in nginx config
     NGINX_CONF=$(mktemp)
-    sed "s|BACK_OFFICE_PATH|$PWD/back-office/static|g; s|SUBMISSIONS_PATH|$PWD/submissions/static|g" ${nginxConf} > "$NGINX_CONF"
+    sed "s|BACK_OFFICE_PATH|$PWD/back-office/static|g; s|SUBMISSIONS_PATH|$PWD/static|g" ${nginxConf} > "$NGINX_CONF"
 
-    # Start nginx
-    ${pkgs.nginx}/bin/nginx -c "$NGINX_CONF" &
+    # Start nginx (redirect stderr to suppress default error log warning)
+    ${pkgs.nginx}/bin/nginx -c "$NGINX_CONF" 2>&1 | grep -v "could not open error log file" | grep -v "nginx: \[alert\]" &
     NGINX_PID=$!
 
     cleanup() {
@@ -84,7 +77,7 @@ let
     echo "Nginx started with PID: $NGINX_PID"
     echo "Listening on http://localhost:4000"
     echo "  - Back-office: http://localhost:4000/back-office/"
-    echo "  - Submissions: http://localhost:4000/submissions/"
+    echo "  - Submissions: http://localhost:4000/"
     echo "  - API: http://localhost:4000/api/"
     wait $NGINX_PID
   '';
