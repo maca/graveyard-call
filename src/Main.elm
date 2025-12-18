@@ -238,7 +238,6 @@ encodeSubmission formFields file =
             (parseField "comment")
         )
         formFields
-        |> Debug.log "results"
         |> Result.withDefault Encode.null
 
 
