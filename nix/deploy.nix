@@ -172,25 +172,6 @@ in
           name = serviceName;
           ensureDBOwnership = true;
         }
-        {
-          name = "authenticator";
-          ensureClauses = {
-            login = false;
-            "inherit" = false;
-          };
-        }
-        {
-          name = "anonymous";
-          ensureClauses = { login = false; };
-        }
-        {
-          name = "submitter";
-          ensureClauses = { login = false; };
-        }
-        {
-          name = "admin";
-          ensureClauses = { login = false; };
-        }
       ];
     };
 
@@ -221,11 +202,13 @@ in
       description = "Load graveyard database schema and configuration";
       after = [ "postgresql.service" "graveyard-db-setup.service" ];
       requires = [ "graveyard-db-setup.service" ];
+      wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
-        User = serviceName;
-        Group = "web";
+        User = "postgres";
+        Group = "postgres";
+        RemainAfterExit = true;
       };
 
       script = ''
