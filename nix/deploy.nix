@@ -9,6 +9,11 @@ let
   serviceName = "graveyard";
   staticAssets = import ./static-assets.nix { inherit pkgs; };
 
+  # Fetch form-toolkit submodule from main branch
+  formToolkit = builtins.fetchTarball {
+    url = "https://github.com/maca/form-toolkit/archive/refs/heads/main.tar.gz";
+  };
+
   # Compile Elm application for main submissions app
   elmApp = pkgs.stdenv.mkDerivation {
     pname = "graveyard-elm";
@@ -21,6 +26,10 @@ let
     buildPhase = ''
       # Elm needs a HOME directory
       export HOME=$TMPDIR
+
+      # Copy form-toolkit to expected location
+      mkdir -p form-toolkit
+      cp -r ${formToolkit}/* form-toolkit/
 
       # Compile Elm to JavaScript with optimization
       elm make src/Main.elm --optimize --output=main.js
