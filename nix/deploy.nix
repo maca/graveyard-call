@@ -166,8 +166,12 @@ in
       enable = true;
       enableTCPIP = false;
       extensions = ps: with ps; [ pgjwt ];
+      ensureDatabases = [ serviceName ];
       ensureUsers = [
-        { name = serviceName; }
+        {
+          name = serviceName;
+          ensureDBOwnership = true;
+        }
         {
           name = "authenticator";
           ensureClauses = {
@@ -191,22 +195,21 @@ in
     };
 
 
-    systemd.services.graveyard-db-create = {
-      description = "Create graveyard database and extensions";
+    systemd.services.graveyard-db-setup = {
+      description = "Setup graveyard database extensions";
       after = [ "postgresql.service" ];
       requires = [ "postgresql.service" ];
+      wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
         User = "postgres";
         Group = "postgres";
+        RemainAfterExit = true;
       };
 
       script = ''
-        set -xeuo pipefail
-        echo "Creating graveyard database..."
-        ${config.services.postgresql.package}/bin/psql -d postgres -c "CREATE DATABASE IF NOT EXISTS ${serviceName} OWNER ${serviceName};" || true
-
+        set -euo pipefail
         echo "Creating extensions..."
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "CREATE EXTENSION IF NOT EXISTS pgcrypto CASCADE;"
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "CREATE EXTENSION IF NOT EXISTS pgjwt CASCADE;"
@@ -216,8 +219,8 @@ in
 
     systemd.services.graveyard-db-load = {
       description = "Load graveyard database schema and configuration";
-      after = [ "postgresql.service" "graveyard-db-create.service" ];
-      requires = [ "graveyard-db-create.service" ];
+      after = [ "postgresql.service" "graveyard-db-setup.service" ];
+      requires = [ "graveyard-db-setup.service" ];
 
       serviceConfig = {
         Type = "oneshot";
