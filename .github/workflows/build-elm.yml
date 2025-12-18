@@ -1,0 +1,60 @@
+name: Build Elm App
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'elm.json'
+      - '.github/workflows/build-elm.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Elm
+        uses: jorelali/setup-elm@v6
+        with:
+          elm-version: 0.19.1
+
+      - name: Build optimized Elm app
+        run: |
+          elm make src/Main.elm --optimize --output=main.js
+
+      - name: Install uglify-js
+        run: npm install -g uglify-js
+
+      - name: Minify JavaScript
+        run: |
+          uglifyjs main.js --compress 'pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle --output main.min.js
+
+      - name: Create release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: "build-${{ github.run_number }}"
+          name: "Build ${{ github.run_number }}"
+          body: "Automated Elm build from commit ${{ github.sha }}"
+          artifacts: |
+            main.js
+            main.min.js
+          allowUpdates: true
+          removeArtifacts: true
+          makeLatest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: elm-app
+          path: |
+            main.js
+            main.min.js

@@ -9,35 +9,18 @@ let
   serviceName = "graveyard";
   staticAssets = import ./static-assets.nix { inherit pkgs; };
 
-  # Fetch form-toolkit submodule from main branch
-  formToolkit = builtins.fetchTarball {
-    url = "https://github.com/maca/form-toolkit/archive/refs/heads/main.tar.gz";
-  };
-
-  # Compile Elm application for main submissions app
+  # Fetch pre-built Elm application from GitHub releases
   elmApp = pkgs.stdenv.mkDerivation {
     pname = "graveyard-elm";
-    version = "1.0.0";
+    version = "latest";
 
-    src = ../.;
+    src = builtins.fetchurl "https://github.com/maca/graveyard-call/releases/latest/download/main.js";
 
-    buildInputs = [ pkgs.elmPackages.elm ];
-
-    buildPhase = ''
-      # Elm needs a HOME directory
-      export HOME=$TMPDIR
-
-      # Copy form-toolkit to expected location
-      mkdir -p form-toolkit
-      cp -r ${formToolkit}/* form-toolkit/
-
-      # Compile Elm to JavaScript with optimization
-      elm make src/Main.elm --optimize --output=main.js
-    '';
+    dontUnpack = true;
 
     installPhase = ''
       mkdir -p $out
-      cp main.js $out/main.js
+      cp $src $out/main.js
     '';
   };
 
