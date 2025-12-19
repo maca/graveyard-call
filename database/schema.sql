@@ -1,15 +1,5 @@
--- Drop old login function from public schema if it exists
-DROP FUNCTION IF EXISTS public.login(text, text);
-
--- Drop and recreate graveyard schema first (CASCADE will drop dependent objects)
-DROP SCHEMA IF EXISTS graveyard CASCADE;
+-- Create graveyard schema
 CREATE SCHEMA graveyard;
-
--- Drop existing roles if they exist
-DROP ROLE IF EXISTS authenticator;
-DROP ROLE IF EXISTS anonymous;
-DROP ROLE IF EXISTS submitter;
-DROP ROLE IF EXISTS admin;
 
 -- Create roles
 CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER;
@@ -18,11 +8,11 @@ CREATE ROLE submitter NOLOGIN;
 CREATE ROLE admin NOLOGIN;
 
 -- Create extensions
-CREATE EXTENSION IF NOT EXISTS pgcrypto CASCADE;
-CREATE EXTENSION IF NOT EXISTS pgjwt CASCADE;
+CREATE EXTENSION pgcrypto CASCADE;
+CREATE EXTENSION pgjwt CASCADE;
 
 -- Create tables in graveyard schema
-CREATE TABLE IF NOT EXISTS graveyard.users (
+CREATE TABLE graveyard.users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(256) UNIQUE NOT NULL,
     password VARCHAR(256) NOT NULL,
@@ -30,7 +20,7 @@ CREATE TABLE IF NOT EXISTS graveyard.users (
 );
 
 
-CREATE TABLE IF NOT EXISTS graveyard.submissions (
+CREATE TABLE graveyard.submissions (
     id SERIAL PRIMARY KEY,
     email VARCHAR(256),
     name VARCHAR(256),

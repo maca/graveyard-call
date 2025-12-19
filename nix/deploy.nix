@@ -120,6 +120,24 @@ in
       default = "/var/log/nginx/graveyard.access.log";
       description = "Access log path for the graveyard virtual host";
     };
+
+    admin = mkOption {
+      type = types.submodule {
+        options = {
+          email = mkOption {
+            type = types.str;
+            description = "Admin user email for back-office login";
+            example = "admin@example.com";
+          };
+          password = mkOption {
+            type = types.str;
+            description = "Admin user password for back-office login";
+            example = "secure-password-here";
+          };
+        };
+      };
+      description = "Admin user credentials for back-office access";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -212,14 +230,17 @@ in
       };
 
       script = ''
-        set -xeuo pipefail
+        set -xuo pipefail
         echo "Loading graveyard database schema..."
-        ${config.services.postgresql.package}/bin/psql -v ON_ERROR_STOP=1 -d ${serviceName} -f ${../database/schema.sql}
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -f ${../database/schema.sql} || true
 
         echo "Setting JWT secret from configuration..."
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${cfg.jwtSecret}';"
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${cfg.jwtSecret}';" || true
 
-        echo "Database load completed successfully"
+        echo "Creating admin user..."
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "INSERT INTO graveyard.users (email, password) VALUES ('${cfg.admin.email}', crypt('${cfg.admin.password}', gen_salt('bf'))) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password;" || true
+
+        echo "Database load completed"
       '';
     };
 
