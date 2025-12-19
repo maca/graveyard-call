@@ -85,7 +85,7 @@ let
 
   # PostgREST config file
   postgrestConf = pkgs.writeText "postgrest.conf" ''
-    db-uri = "postgres://authenticator@?host=${cfg.databaseSocket}&dbname=${serviceName}"
+    db-uri = "postgres:///?host=${cfg.databaseSocket}&dbname=${serviceName}"
     db-schemas = "graveyard"
     db-anon-role = "anonymous"
     jwt-secret = "${cfg.jwtSecret}"
@@ -190,6 +190,13 @@ in
           name = serviceName;
           ensureDBOwnership = true;
         }
+        {
+          name = "authenticator";
+          ensureClauses = {
+            login = true;
+            "inherit" = false;
+          };
+        }
       ];
     };
 
@@ -236,6 +243,11 @@ in
 
         echo "Setting JWT secret from configuration..."
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${cfg.jwtSecret}';" || true
+
+        echo "Granting roles to ${serviceName} user for PostgREST..."
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "GRANT anonymous TO ${serviceName} WITH INHERIT FALSE, SET TRUE;" || true
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "GRANT submitter TO ${serviceName} WITH INHERIT FALSE, SET TRUE;" || true
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "GRANT admin TO ${serviceName} WITH INHERIT FALSE, SET TRUE;" || true
 
         echo "Creating admin user..."
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "INSERT INTO graveyard.users (email, password) VALUES ('${cfg.admin.email}', crypt('${cfg.admin.password}', gen_salt('bf'))) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password;" || true
