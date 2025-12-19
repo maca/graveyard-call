@@ -118,9 +118,9 @@ ON CONFLICT (email) DO NOTHING;
 
 
 -- Grant roles to authenticator
-GRANT anonymous TO authenticator;
-GRANT submitter TO authenticator;
-GRANT admin TO authenticator;
+GRANT anonymous TO authenticator WITH INHERIT FALSE, SET TRUE;
+GRANT submitter TO authenticator WITH INHERIT FALSE, SET TRUE;
+GRANT admin TO authenticator WITH INHERIT FALSE, SET TRUE;
 
 -- Grant execute on functions to anonymous users
 GRANT EXECUTE ON FUNCTION graveyard.login(text, text) TO anonymous;

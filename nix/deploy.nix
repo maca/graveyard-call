@@ -85,7 +85,7 @@ let
 
   # PostgREST config file
   postgrestConf = pkgs.writeText "postgrest.conf" ''
-    db-uri = "postgres:///?host=${cfg.databaseSocket}&dbname=${serviceName}"
+    db-uri = "postgres://authenticator@?host=${cfg.databaseSocket}&dbname=${serviceName}"
     db-schemas = "graveyard"
     db-anon-role = "anonymous"
     jwt-secret = "${cfg.jwtSecret}"
