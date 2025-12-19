@@ -46,9 +46,7 @@ let
                     jwt: sessionStorage.getItem("jwt"),
                     host: "https://${cfg.domain}/api",
                     loginUrl: "https://${cfg.domain}/api/rpc/login",
-                    mountPoint: "/back-office",
-                    clientHeaders: {},
-                    "loginBannerText": "**Welcome to Graveyard Back Office!**\n\nA back-office interface for managing submissions.\n\nLogin with user: 'user@example.com' and password: 'password'.\n"
+                    mountPoint: "/back-office"
                 }
             })
 
