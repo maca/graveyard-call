@@ -60,10 +60,20 @@ type Msg
 
 storyPlaceholders : List String
 storyPlaceholders =
-    [ """Honestly, it felt like my whole world just fell apart when Paris Hilton's Diamond Quest straight-up disappeared. It still hits me like I lost a huge, irreplaceable piece of my life. Who's even responsible for this?? How does stuff like this even happen?? I tried to…"""
-    , """I wiped out over ten years of playlists. Every track was handpicked, repping all the phases I been through, y'know, stuff I'll never get back. Sometimes bits of songs get stuck in my head, but I can't remember neither the words nor how…"""
-    , """My VRChat world, the place I always hung out with one of my best mates, vanished outta nowhere. I loved that world. Now it's just… vanished, no warning, fam. I can't even…"""
-    , """In 2012, my ex nuked my accounts! Ten years of posts, pics, friends whose real names I didn't even know. Security online? Completely insane! But yes… it gets worse…"""
+    [ """Honestly, it felt like my whole world just fell apart when Paris Hilton's
+    Diamond Quest straight-up disappeared. It still hits me like I lost a huge,
+    irreplaceable piece of my life. Who's even responsible for this?? How does stuff
+    like this even happen?? I tried to…"""
+    , """I wiped out over ten years of playlists. Every track was handpicked,
+    repping all the phases I been through, y'know, stuff I'll never get back.
+    Sometimes bits of songs get stuck in my head, but I can't remember neither the
+    words nor how…"""
+    , """My VRChat world, the place I always hung out with one of my best mates,
+    vanished outta nowhere. I loved that world. Now it's just… vanished, no
+    warning, fam. I can't even…"""
+    , """In 2012, my ex nuked my accounts! Ten
+    years of posts, pics, friends whose real names I didn't even know. Security
+    online? Completely insane! But yes… it gets worse…"""
     ]
 
 
@@ -197,19 +207,19 @@ update msg model =
                     |> Result.withDefault False
                 )
             of
-                ( Just _, Ok file, True ) ->
-                    ( model, Task.perform GotBytes (File.toBytes file) )
-
-                ( Nothing, _, _ ) ->
-                    ( { model | progress = Just { sent = 0, size = 100 } }
-                    , Task.perform (always FormSubmitted) (Process.sleep 500)
-                    )
-
                 ( _, Err _, _ ) ->
                     showNotice (Error "Please select a file.") model
 
                 ( _, _, False ) ->
                     showNotice (Error "Please agree to the consent to use submitted content.") model
+
+                ( Just _, Ok file, True ) ->
+                    ( model, Task.perform GotBytes (File.toBytes file) )
+
+                ( Nothing, _, _ ) ->
+                    ( model
+                    , Task.perform (always FormSubmitted) (Process.sleep 500)
+                    )
 
         GotBytes bytes ->
             case Parse.parse (Parse.field "file" Parse.file) model.fields of
@@ -456,6 +466,7 @@ viewForm model =
         , Html.form
             [ Events.onSubmit FormSubmitted
             , Attrs.disabled (model.progress /= Nothing)
+            , Attrs.novalidate True
             ]
             [ model.fields
                 |> View.fromField FieldsChanged
