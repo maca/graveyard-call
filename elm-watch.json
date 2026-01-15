@@ -1,4 +1,6 @@
 {
+  "serve": "static",
+  "port": 8000,
   "targets": {
     "Main": {
       "inputs": ["src/Main.elm"],
