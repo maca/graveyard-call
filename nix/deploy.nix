@@ -66,8 +66,7 @@ let
   # Package main application static files
   mainStaticBundle = pkgs.runCommand "graveyard-main-static" { } ''
     mkdir -p $out
-    cp ${../static/index.html} $out/index.html
-    cp ${../static/style.css} $out/style.css
+    cp -r ${../static}/* $out/
     cp ${elmApp}/main.js $out/main.js
   '';
 
