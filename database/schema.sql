@@ -22,12 +22,33 @@ CREATE TABLE graveyard.users (
 
 CREATE TABLE graveyard.submissions (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(256),
-    name VARCHAR(256),
-    comment TEXT,
+    email VARCHAR(512),
+    name VARCHAR,
+    residence VARCHAR,
+    story TEXT,
     file BYTEA NOT NULL,
+    file_name VARCHAR NOT NULL,
+    file_mime_type VARCHAR(128) NOT NULL,
+    consent_given BOOLEAN NOT NULL DEFAULT FALSE,
+    consent_version VARCHAR(16) NOT NULL DEFAULT 'v1.0',
     jwt_token TEXT UNIQUE,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT file_size_limit CHECK (octet_length(file) <= 31457280),
+    CONSTRAINT valid_mime_type CHECK (
+        file_mime_type IN (
+            'image/jpeg',
+            'image/png',
+            'image/heic',
+            'image/heif',
+            'video/mp4',
+            'video/quicktime',
+            'model/gltf-binary',
+            'audio/mpeg',
+            'audio/mp4',
+            'audio/x-m4a'
+        )
+    ),
+    CONSTRAINT consent_must_be_given CHECK (consent_given = TRUE)
 );
 
 

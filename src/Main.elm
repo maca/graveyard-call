@@ -7,6 +7,7 @@ import File
 import FormToolkit.Field as Field exposing (Field)
 import FormToolkit.Parse as Parse
 import FormToolkit.Value as Value
+import FormToolkit.View as View
 import Html exposing (Html)
 import Html.Attributes as Attrs
 import Html.Events as Events
@@ -14,7 +15,9 @@ import Http
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Process
+import Random
 import Task
+import Time
 
 
 main : Program () Model Msg
@@ -39,6 +42,7 @@ type alias Model =
     , notice : Notice
     , progress : Maybe { sent : Int, size : Int }
     , jwtToken : Maybe String
+    , placeholderIndex : Int
     }
 
 
@@ -51,16 +55,30 @@ type Msg
     | CancelUpload
     | GotToken (Result Http.Error String)
     | DismissNotice Notice
+    | GotTime Time.Posix
+
+
+storyPlaceholders : List String
+storyPlaceholders =
+    [ """Honestly, it felt like my whole world just fell apart when Paris Hilton's Diamond Quest straight-up disappeared. It still hits me like I lost a huge, irreplaceable piece of my life. Who's even responsible for this?? How does stuff like this even happen?? I tried to…"""
+    , """I wiped out over ten years of playlists. Every track was handpicked, repping all the phases I been through, y'know, stuff I'll never get back. Sometimes bits of songs get stuck in my head, but I can't remember neither the words nor how…"""
+    , """My VRChat world, the place I always hung out with one of my best mates, vanished outta nowhere. I loved that world. Now it's just… vanished, no warning, fam. I can't even…"""
+    , """In 2012, my ex nuked my accounts! Ten years of posts, pics, friends whose real names I didn't even know. Security online? Completely insane! But yes… it gets worse…"""
+    ]
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { fields = fields
+    ( { fields = fields 0
       , notice = NoNotice
       , progress = Nothing
       , jwtToken = Nothing
+      , placeholderIndex = 0
       }
-    , Task.attempt GotToken (fetchJwtTokenAfter tokenTTL)
+    , Cmd.batch
+        [ Task.perform GotTime Time.now
+        , Task.attempt GotToken (fetchJwtTokenAfter tokenTTL)
+        ]
     )
 
 
@@ -104,32 +122,61 @@ fetchJwtTokenAfter delayMs =
             )
 
 
-fields : Field String
-fields =
+fields : Int -> Field String
+fields placeholderIndex =
+    let
+        placeholder =
+            storyPlaceholders
+                |> List.drop placeholderIndex
+                |> List.head
+                |> Maybe.withDefault ""
+    in
     Field.group
         []
         [ Field.text
             [ Field.identifier "name"
             , Field.label "Name"
-            , Field.hint "It's up to you to tell us who you are"
+            , Field.hint "Enter your name or a username you'd like to use."
             ]
         , Field.text
             [ Field.identifier "email"
             , Field.label "Email"
-            , Field.hint "You can provide your if email if you like"
+            , Field.hint "Provide your email if you'd like to receive updates about the project."
+            ]
+        , Field.text
+            [ Field.identifier "residence"
+            , Field.label "Place of residence"
+            , Field.hint "Optionally, share where you are based."
+            ]
+        , Field.textarea
+            [ Field.identifier "story"
+            , Field.label "Share the memory of your loss"
+            , Field.autogrow True
+            , Field.placeholder placeholder
             ]
         , Field.file
             [ Field.identifier "file"
-            , Field.label "Upload"
+            , Field.label "Upload an image, short video, 3D object (glb), or audio file that represents your experience of loss"
+            , Field.hint "Maximum size: 15 MB."
             , Field.required True
-            , Field.hint "Please upload a file"
-            , Field.max (Value.int 5242880)
+            , Field.max (Value.int 15728640)
+            , Field.accept
+                [ "image/jpeg"
+                , "image/png"
+                , "image/heic"
+                , "image/heif"
+                , "video/mp4"
+                , "video/quicktime"
+                , "model/gltf-binary"
+                , "audio/mpeg"
+                , "audio/mp4"
+                , "audio/x-m4a"
+                ]
             ]
-        , Field.textarea
-            [ Field.identifier "comment"
-            , Field.label "Comment"
-            , Field.autogrow True
-            , Field.hint "Feel free to add a comment to your submission"
+        , Field.checkbox
+            [ Field.identifier "consent"
+            , Field.label "I have read and agree to the Consent to Use Submitted Content."
+            , Field.required True
             ]
         ]
 
@@ -143,33 +190,47 @@ update msg model =
             )
 
         FormSubmitted ->
-            case ( model.jwtToken, Parse.parse (Parse.field "file" Parse.file) model.fields ) of
-                ( Just _, Ok file ) ->
+            case
+                ( model.jwtToken
+                , Parse.parse (Parse.field "file" Parse.file) model.fields
+                , Parse.parse (Parse.field "consent" Parse.bool) model.fields
+                    |> Result.withDefault False
+                )
+            of
+                ( Just _, Ok file, True ) ->
                     ( model, Task.perform GotBytes (File.toBytes file) )
 
-                ( Nothing, _ ) ->
+                ( Nothing, _, _ ) ->
                     ( { model | progress = Just { sent = 0, size = 100 } }
                     , Task.perform (always FormSubmitted) (Process.sleep 500)
                     )
 
-                _ ->
+                ( _, Err _, _ ) ->
                     showNotice (Error "Please select a file.") model
 
+                ( _, _, False ) ->
+                    showNotice (Error "Please agree to the consent to use submitted content.") model
+
         GotBytes bytes ->
-            ( model
-            , Http.request
-                { method = "POST"
-                , headers =
-                    [ Http.header "Authorization"
-                        ("Bearer " ++ (model.jwtToken |> Maybe.withDefault ""))
-                    ]
-                , url = "/api/submissions"
-                , body = Http.jsonBody (encodeSubmission model.fields bytes)
-                , expect = Http.expectWhatever Uploaded
-                , timeout = Nothing
-                , tracker = Just "submission"
-                }
-            )
+            case Parse.parse (Parse.field "file" Parse.file) model.fields of
+                Ok file ->
+                    ( model
+                    , Http.request
+                        { method = "POST"
+                        , headers =
+                            [ Http.header "Authorization"
+                                ("Bearer " ++ (model.jwtToken |> Maybe.withDefault ""))
+                            ]
+                        , url = "/api/submissions"
+                        , body = Http.jsonBody (encodeSubmission model.fields bytes (File.name file) (File.mime file))
+                        , expect = Http.expectWhatever Uploaded
+                        , timeout = Nothing
+                        , tracker = Just "submission"
+                        }
+                    )
+
+                Err _ ->
+                    showNotice (Error "Failed to read file information.") model
 
         GotProgress (Http.Sending progress) ->
             ( { model | progress = Just progress }, Cmd.none )
@@ -178,15 +239,27 @@ update msg model =
             ( model, Cmd.none )
 
         Uploaded result ->
-            showNotice
-                (case result of
-                    Ok _ ->
-                        Notice "Thanks for your submission!"
+            let
+                ( noticeModel, noticeCmd ) =
+                    showNotice
+                        (case result of
+                            Ok _ ->
+                                Notice "Thank you for the memory. It will stay with us. Rest in peace."
 
-                    Err _ ->
-                        Error "Ohh! Something went wrong, please try again."
-                )
-                { model | progress = Nothing, fields = fields }
+                            Err _ ->
+                                Error "Oops, something went wrong on our side, please try again."
+                        )
+                        { model
+                            | progress = Nothing
+                            , fields = fields model.placeholderIndex
+                        }
+            in
+            ( noticeModel
+            , Cmd.batch
+                [ noticeCmd
+                , Task.attempt GotToken (fetchJwtTokenAfter 0)
+                ]
+            )
 
         CancelUpload ->
             ( { model | progress = Nothing }, Http.cancel "submission" )
@@ -211,11 +284,26 @@ update msg model =
             , Cmd.none
             )
 
+        GotTime posix ->
+            let
+                seed =
+                    Random.initialSeed (Time.posixToMillis posix)
 
-encodeSubmission : Field String -> Bytes -> Encode.Value
-encodeSubmission formFields file =
+                ( index, _ ) =
+                    Random.step (Random.int 0 (List.length storyPlaceholders - 1)) seed
+            in
+            ( { model
+                | placeholderIndex = index
+                , fields = fields index
+              }
+            , Cmd.none
+            )
+
+
+encodeSubmission : Field String -> Bytes -> String -> String -> Encode.Value
+encodeSubmission formFields file fileName mimeType =
     let
-        parseField name =
+        parseMaybe name =
             Parse.field name (Parse.maybe Parse.string)
                 |> Parse.map (Maybe.map (Encode.string >> Tuple.pair name))
 
@@ -226,16 +314,27 @@ encodeSubmission formFields file =
                 |> Encode.string
     in
     Parse.parse
-        (Parse.map3
-            (\name email comment ->
+        (Parse.succeed
+            (\name email residence story consent ->
                 Encode.object
                     (List.filterMap identity
-                        [ Just ( "file", encoded ), name, email, comment ]
+                        [ Just ( "file", encoded )
+                        , Just ( "file_name", Encode.string fileName )
+                        , Just ( "file_mime_type", Encode.string mimeType )
+                        , Just ( "consent_given", Encode.bool consent )
+                        , Just ( "consent_version", Encode.string "v1.0" )
+                        , name
+                        , email
+                        , residence
+                        , story
+                        ]
                     )
             )
-            (parseField "name")
-            (parseField "email")
-            (parseField "comment")
+            |> Parse.andMap (parseMaybe "name")
+            |> Parse.andMap (parseMaybe "email")
+            |> Parse.andMap (parseMaybe "residence")
+            |> Parse.andMap (parseMaybe "story")
+            |> Parse.andMap (Parse.field "consent" Parse.bool)
         )
         formFields
         |> Result.withDefault Encode.null
@@ -251,31 +350,55 @@ showNotice notice model =
 view : Model -> Html Msg
 view model =
     Html.div
-        [ Attrs.class "container"
-        ]
+        []
         [ Html.div
-            []
-            [ Html.h1
-                []
-                [ Html.text "Title" ]
-            , Html.form
-                [ Events.onSubmit FormSubmitted
-                , Attrs.disabled (model.progress /= Nothing)
+            [ Attrs.class "content-wrapper" ]
+            [ Html.div
+                [ Attrs.class "side-text-left" ]
+                [ Html.div
+                    [ Attrs.class "vertical-text" ]
+                    [ Html.a
+                        [ Attrs.href "https://www.argekultur.at/"
+                        , Attrs.target "_blank"
+                        ]
+                        [ Html.text "ARGEkultur Salzburg" ]
+                    , viewStars 3
+                    , Html.a
+                        [ Attrs.href "https://schauspielhaus-graz.buehnen-graz.com/"
+                        , Attrs.target "_blank"
+                        ]
+                        [ Html.text "Schauspielhaus Graz" ]
+                    ]
                 ]
-                [ Field.toHtml FieldsChanged model.fields
-                , Html.button
-                    [ Attrs.type_ "submit" ]
-                    [ Html.text "Submit" ]
+            , Html.div
+                [ Attrs.class "container" ]
+                [ viewTitle
+                , Html.div [ Attrs.class "emblem-container" ] []
+                , viewForm model
+                , viewTitle
                 ]
-            , case model.notice of
-                NoNotice ->
-                    Html.text ""
-
-                Error error ->
-                    Html.div [ Attrs.class "error" ] [ Html.text error ]
-
-                Notice notice ->
-                    Html.div [ Attrs.class "notice" ] [ Html.text notice ]
+            , Html.div
+                [ Attrs.class "side-text-right" ]
+                [ Html.div [ Attrs.class "vertical-text" ]
+                    [ Html.a
+                        [ Attrs.href "https://someonlinearchitecturepractice.com/"
+                        , Attrs.target "_blank"
+                        ]
+                        [ Html.text "SOAP" ]
+                    , viewStars 3
+                    , Html.a
+                        [ Attrs.href "https://www.hebbel-am-ufer.de/en/"
+                        , Attrs.target "_blank"
+                        ]
+                        [ Html.text "HAU Hebbel am Ufer" ]
+                    , viewStars 3
+                    , Html.a
+                        [ Attrs.href "https://theaternetzwerk.digital/"
+                        , Attrs.target "_blank"
+                        ]
+                        [ Html.text "theaternetzwerk.digital" ]
+                    ]
+                ]
             ]
         , case model.progress of
             Just progress ->
@@ -283,6 +406,107 @@ view model =
 
             Nothing ->
                 Html.text ""
+        ]
+
+
+viewStars : Int -> Html Msg
+viewStars count =
+    Html.div [ Attrs.class "stars-row" ]
+        (List.repeat count (Html.div [ Attrs.class "star" ] []))
+
+
+viewTitle : Html Msg
+viewTitle =
+    Html.div [ Attrs.class "title" ]
+        [ viewStars 6
+        , Html.h1 []
+            [ Html.div [] [ Html.text "SHARE YOUR" ]
+            , Html.div
+                [ Attrs.class "char-justify" ]
+                [ Html.span [] [ Html.text "S" ]
+                , Html.span [] [ Html.text "T" ]
+                , Html.span [] [ Html.text "O" ]
+                , Html.span [] [ Html.text "R" ]
+                , Html.span [] [ Html.text "Y" ]
+                ]
+            , Html.div [] [ Html.text "OF LOSS" ]
+            ]
+        ]
+
+
+viewInvitationText : Html msg
+viewInvitationText =
+    Html.div
+        [ Attrs.class "invitation-text" ]
+        [ Html.text
+            """SOAP invites you to share your personal experiences of data
+            loss on the internet. We want to hear your stories and memories
+            shaped by erasure or disappearance in digital environments: lost
+            accounts, wiped archives and servers, vanished or sunset platforms,
+            no-longer-accessible chat conversations, severed connections, or
+            traces quietly erased by algorithms."""
+        ]
+
+
+viewForm : Model -> Html Msg
+viewForm model =
+    Html.div
+        [ Attrs.class "content" ]
+        [ viewInvitationText
+        , Html.form
+            [ Events.onSubmit FormSubmitted
+            , Attrs.disabled (model.progress /= Nothing)
+            ]
+            [ model.fields
+                |> View.fromField FieldsChanged
+                |> View.customizeFields
+                    (\{ attributes, hintHtml, inputOnCheck } ->
+                        case attributes.identifier of
+                            Just "consent" ->
+                                Just
+                                    (Html.div
+                                        [ Attrs.class "field" ]
+                                        [ Html.label [ Attrs.for "consent-checkbox" ]
+                                            [ Html.input
+                                                [ Attrs.type_ "checkbox"
+                                                , Attrs.id "consent-checkbox"
+                                                , attributes.value
+                                                    |> Value.toBool
+                                                    |> Maybe.map Attrs.checked
+                                                    |> Maybe.withDefault (Attrs.class "")
+                                                , Events.onCheck inputOnCheck
+                                                ]
+                                                []
+                                            , Html.text "I have read and agree to the "
+                                            , Html.a
+                                                [ Attrs.href "/consent.html"
+                                                , Attrs.target "_blank"
+                                                , Attrs.class "consent-link"
+                                                ]
+                                                [ Html.text "Consent to Use Submitted Content" ]
+                                            , Html.text "."
+                                            ]
+                                        , hintHtml []
+                                        ]
+                                    )
+
+                            _ ->
+                                Nothing
+                    )
+                |> View.toHtml
+            , Html.button
+                [ Attrs.type_ "submit" ]
+                [ Html.text "Submit your loss" ]
+            ]
+        , case model.notice of
+            NoNotice ->
+                Html.text ""
+
+            Error error ->
+                Html.div [ Attrs.class "error" ] [ Html.text error ]
+
+            Notice notice ->
+                Html.div [ Attrs.class "notice" ] [ Html.text notice ]
         ]
 
 
