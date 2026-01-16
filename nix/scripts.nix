@@ -32,6 +32,13 @@ let
     PIDS="$PIDS $ELM_WATCH_PID"
     sleep 2
 
+    # Start elm-watch for back-office in background
+    echo "Starting elm-watch service for back-office..."
+    { cd back-office && elm-watch hot 2>&1 1>&3 | sed 's/.*/\x1b[31mELM-WATCH-BO: &\x1b[0m/' >&2; } 3>&1 | sed 's/.*/\x1b[36mELM-WATCH-BO: &\x1b[0m/' &
+    ELM_WATCH_BO_PID=$!
+    PIDS="$PIDS $ELM_WATCH_BO_PID"
+    sleep 2
+
     # Start Nginx in background
     echo "Starting Nginx service..."
     { run-nginx 2>&1 1>&3 | sed 's/.*/\x1b[31mNGINX: &\x1b[0m/' >&2; } 3>&1 | sed 's/.*/\x1b[35mNGINX: &\x1b[0m/' &
@@ -70,7 +77,8 @@ let
     echo "All services started successfully!"
     echo "- PostgreSQL: Database server running on unix socket"
     echo "- PostgREST: API server on unix socket /tmp/postgrest-graveyard.sock"
-    echo "- elm-watch: Elm compiler with hot reload for submissions app"
+    echo "- elm-watch: Elm compiler with hot reload for submissions (port 8000)"
+    echo "- elm-watch: Elm compiler with hot reload for back-office (port 9000)"
     echo "- Nginx: Web server on http://localhost:$PORT"
     echo ""
     echo "Access the application:"

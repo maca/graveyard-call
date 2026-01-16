@@ -1,3 +1,6 @@
 [submodule "form-toolkit"]
 	path = form-toolkit
 	url = https://github.com/maca/form-toolkit.git
+[submodule "postgrest-admin"]
+	path = postgrest-admin
+	url = https://github.com/maca/postgrest-admin.git

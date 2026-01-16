@@ -24,43 +24,12 @@ let
     '';
   };
 
-  # Create back-office index.html with production URLs
-  backOfficeIndex = pkgs.writeText "index.html" ''
-    <!DOCTYPE HTML>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Graveyard - Back Office</title>
-      <style>body { padding: 0; margin: 0; }</style>
-      <link rel="stylesheet" href="/back-office/icono.min.css" />
-      <link rel="stylesheet" href="/back-office/milligram.min.css" />
-      <link rel="stylesheet" href="/back-office/postgrest-admin.css" type="text/css" media="screen" />
-      <script src="https://pga.bitmunge.com/postgrest-admin.min.js"></script>
-    </head>
-
-    <body>
-        <script type="text/javascript">
-            console.log("token: ", sessionStorage.getItem("jwt"))
-            const app = Elm.Main.init({
-                flags: {
-                    jwt: sessionStorage.getItem("jwt"),
-                    host: "https://${cfg.domain}/api",
-                    loginUrl: "https://${cfg.domain}/api/rpc/login",
-                    mountPoint: "/back-office"
-                }
-            })
-
-            app.ports.loggedIn.subscribe(jwt => {
-                console.log("got token: ", jwt)
-                sessionStorage.setItem("jwt", jwt)
-            });
-
-            app.ports.loggedOut.subscribe(_ => {
-                sessionStorage.removeItem("jwt")
-            });
-        </script>
-    <body>
-    </html>
+  # Create back-office index.html by copying local and replacing script src for production
+  backOfficeIndex = pkgs.runCommand "back-office-index" { } ''
+    ${pkgs.gnused}/bin/sed \
+      -e 's|src="/back-office/main.js"|src="https://pga.bitmunge.com/postgrest-admin.min.js"|' \
+      -e 's|http://localhost:4000/api|https://${cfg.domain}/api|g' \
+      ${../back-office/static/index.html} > $out
   '';
 
   # Package main application static files

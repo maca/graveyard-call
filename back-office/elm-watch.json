@@ -1,0 +1,10 @@
+{
+    "targets": {
+        "BackOffice": {
+            "inputs": ["src/Main.elm"],
+            "output": "static/main.js"
+        }
+    },
+    "serve": "./static/",
+    "port": 9000
+}

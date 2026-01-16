@@ -48,7 +48,6 @@
 
             # Setup static assets for back-office
             mkdir -p "$PWD/back-office/static"
-            cp -f "${staticAssets.postgrestAdmin}/postgrest-admin.min.js" "$PWD/back-office/static/postgrest-admin.min.js"
             cp -f "${staticAssets.icono}/icono.min.css" "$PWD/back-office/static/icono.min.css"
             cp -f "${staticAssets.milligram}/milligram.min.css" "$PWD/back-office/static/milligram.min.css"
 

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/back-office/icono.min.css" />
   <link rel="stylesheet" href="/back-office/milligram.min.css" />
   <link rel="stylesheet" href="/back-office/postgrest-admin.css" type="text/css" media="screen" />
-  <script src="https://pga.bitmunge.com/postgrest-admin.min.js"></script>
+  <script src="/back-office/main.js"></script>
 </head>
 
 <body>
@@ -18,7 +18,7 @@
                 jwt: sessionStorage.getItem("jwt"),
                 host: "http://localhost:4000/api",
                 loginUrl: "http://localhost:4000/api/rpc/login",
-                mountPoint: "/back-office"
+                mountPath: "/back-office"
             }
         })
 
