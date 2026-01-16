@@ -47,6 +47,14 @@ let
     ${pgEnvSetup}
     ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$PWD/database/schema.sql"
     ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$PWD/database/config.sql"
+
+    # Load migrations in order
+    for migration in "$PWD/database/migrations"/*.sql; do
+      if [ -f "$migration" ]; then
+        echo "Loading migration: $migration"
+        ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$migration"
+      fi
+    done
   '';
 
   setup = pkgs.writeShellScriptBin "setup" ''

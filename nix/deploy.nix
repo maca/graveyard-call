@@ -238,6 +238,14 @@ in
         echo "Loading graveyard database schema..."
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -f ${../database/schema.sql} || true
 
+        echo "Loading database migrations..."
+        for migration in ${../database/migrations}/*.sql; do
+          if [ -f "$migration" ]; then
+            echo "Loading migration: $migration"
+            ${config.services.postgresql.package}/bin/psql -d ${serviceName} -f "$migration" || true
+          fi
+        done
+
         echo "Setting JWT secret from configuration..."
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${cfg.jwtSecret}';" || true
 
