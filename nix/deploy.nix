@@ -24,10 +24,25 @@ let
     '';
   };
 
+  # Fetch pre-built back-office Elm application from GitHub releases
+  backOfficeElmApp = pkgs.stdenv.mkDerivation {
+    pname = "graveyard-backoffice-elm";
+    version = "latest";
+
+    src = builtins.fetchurl "https://github.com/maca/graveyard-call/releases/latest/download/back-office.js";
+
+    dontUnpack = true;
+
+    installPhase = ''
+      mkdir -p $out
+      cp $src $out/back-office.js
+    '';
+  };
+
   # Create back-office index.html by copying local and replacing script src for production
   backOfficeIndex = pkgs.runCommand "back-office-index" { } ''
     ${pkgs.gnused}/bin/sed \
-      -e 's|src="/back-office/main.js"|src="https://pga.bitmunge.com/postgrest-admin.min.js"|' \
+      -e 's|src="/back-office/main.js"|src="/back-office/back-office.js"|' \
       -e 's|http://localhost:4000/api|https://${cfg.domain}/api|g' \
       ${../back-office/static/index.html} > $out
   '';
@@ -43,7 +58,7 @@ let
   backOfficeBundle = pkgs.runCommand "graveyard-backoffice-static" { } ''
     mkdir -p $out
     cp ${backOfficeIndex} $out/index.html
-    cp ${staticAssets.postgrestAdmin}/postgrest-admin.min.js $out/postgrest-admin.min.js
+    cp ${backOfficeElmApp}/back-office.js $out/back-office.js
     cp ${staticAssets.icono}/icono.min.css $out/icono.min.css
     cp ${staticAssets.milligram}/milligram.min.css $out/milligram.min.css
     cp ${../back-office/static/postgrest-admin.css} $out/postgrest-admin.css

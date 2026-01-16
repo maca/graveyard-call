@@ -6,6 +6,8 @@ on:
     paths:
       - 'src/**'
       - 'elm.json'
+      - 'back-office/src/**'
+      - 'back-office/elm.json'
       - '.github/workflows/build-elm.yml'
   workflow_dispatch:
 
@@ -31,12 +33,18 @@ jobs:
         run: |
           elm make src/Main.elm --optimize --output=main.js
 
+      - name: Build optimized back-office Elm app
+        working-directory: back-office
+        run: |
+          elm make src/Main.elm --optimize --output=back-office.js
+
       - name: Install uglify-js
         run: npm install -g uglify-js
 
       - name: Minify JavaScript
         run: |
           uglifyjs main.js --compress 'pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle --output main.min.js
+          uglifyjs back-office/back-office.js --compress 'pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle --output back-office/back-office.min.js
 
       - name: Create release
         id: create_release
@@ -48,6 +56,8 @@ jobs:
           artifacts: |
             main.js
             main.min.js
+            back-office/back-office.js
+            back-office/back-office.min.js
           allowUpdates: true
           removeArtifacts: true
           makeLatest: true
@@ -61,3 +71,5 @@ jobs:
           path: |
             main.js
             main.min.js
+            back-office/back-office.js
+            back-office/back-office.min.js
