@@ -6,7 +6,7 @@ let
     pname = "graveyard-deps";
     version = "1.0.0";
 
-    src = ../.;
+    src = ../../.;
 
     npmDepsHash = "sha256-7rauI4lrSZaR83ss4w6uzQg6TJzPkzc/Ll4lDQZ4PK8=";
 

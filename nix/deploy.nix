@@ -9,6 +9,9 @@ let
   serviceName = "graveyard";
   staticAssets = import ./static-assets.nix { inherit pkgs; };
 
+  goose = pkgs.goose;
+  migrationsDir = ../database/migrations;
+
   # Fetch pre-built Elm application from GitHub releases
   elmApp = pkgs.stdenv.mkDerivation {
     pname = "graveyard-elm";
@@ -135,8 +138,8 @@ in
     systemd.services.graveyard = {
       description = "Graveyard PostgREST service";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "postgresql.service" "graveyard-db-load.service" ];
-      requires = [ "graveyard-db-load.service" ];
+      after = [ "network.target" "postgresql.service" "graveyard-migrate.service" ];
+      requires = [ "graveyard-migrate.service" ];
 
       serviceConfig = {
         Type = "simple";
@@ -182,8 +185,8 @@ in
     };
 
 
-    systemd.services.graveyard-db-setup = {
-      description = "Setup graveyard database extensions";
+    systemd.services.graveyard-migrate = {
+      description = "Run graveyard database migrations";
       after = [ "postgresql.service" ];
       requires = [ "postgresql.service" ];
       wantedBy = [ "multi-user.target" ];
@@ -197,41 +200,12 @@ in
 
       script = ''
         set -euo pipefail
-        echo "Creating extensions..."
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "CREATE EXTENSION IF NOT EXISTS pgcrypto CASCADE;"
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "CREATE EXTENSION IF NOT EXISTS pgjwt CASCADE;"
-      '';
-    };
 
-
-    systemd.services.graveyard-db-load = {
-      description = "Load graveyard database schema and configuration";
-      after = [ "postgresql.service" "graveyard-db-setup.service" ];
-      requires = [ "graveyard-db-setup.service" ];
-      wantedBy = [ "multi-user.target" ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        User = "postgres";
-        Group = "postgres";
-        RemainAfterExit = true;
-      };
-
-      script = ''
-        set -xuo pipefail
-        echo "Loading graveyard database schema..."
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -f ${../database/schema.sql} || true
-
-        echo "Loading database migrations..."
-        for migration in ${../database/migrations}/*.sql; do
-          if [ -f "$migration" ]; then
-            echo "Loading migration: $migration"
-            ${config.services.postgresql.package}/bin/psql -d ${serviceName} -f "$migration" || true
-          fi
-        done
+        echo "Running goose migrations..."
+        ${goose}/bin/goose -dir ${migrationsDir} postgres "host=${cfg.databaseSocket} dbname=${serviceName} sslmode=disable" up
 
         echo "Setting JWT secret from configuration..."
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${cfg.jwtSecret}';" || true
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${cfg.jwtSecret}';"
 
         echo "Granting roles to ${serviceName} user for PostgREST..."
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "GRANT anonymous TO ${serviceName} WITH INHERIT FALSE, SET TRUE;" || true
@@ -239,9 +213,9 @@ in
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "GRANT admin TO ${serviceName} WITH INHERIT FALSE, SET TRUE;" || true
 
         echo "Creating admin user..."
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "INSERT INTO graveyard.users (email, password) VALUES ('${cfg.admin.email}', crypt('${cfg.admin.password}', gen_salt('bf'))) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password;" || true
+        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "INSERT INTO graveyard.users (email, password) VALUES ('${cfg.admin.email}', crypt('${cfg.admin.password}', gen_salt('bf'))) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password;"
 
-        echo "Database load completed"
+        echo "Database migrations completed"
       '';
     };
 

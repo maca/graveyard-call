@@ -1,25 +1,24 @@
 { pkgs }:
 
 let
-  postgresql = pkgs.postgresql_17.withPackages (ps: [
-    ps.pgjwt
-  ]);
+  goose = pkgs.goose;
+  migrationsDir = ../../database/migrations;
 
-  # Common environment setup
+  postgresql = pkgs.postgresql_17.withPackages (ps: [ ps.pgjwt ]);
+  serviceName = "graveyard";
+  devJwtSecret = "DL+P8+muauKgOSqRKqIKMkjcUpLZ5ajXScgA965i/Bg=";
+
   pgEnvSetup = ''
     export PGDATA=$PWD/database/pgdata
     export PGHOST=$PWD/database/pgdata
-    export PGDATABASE=graveyard
+    export PGDATABASE=${serviceName}
   '';
 
-  # Common helper functions
   pgHelpers = ''
-    # Check if PostgreSQL is running
     pg_is_running() {
       ${postgresql}/bin/pg_ctl -D "$PGDATA" status > /dev/null 2>&1
     }
 
-    # Start PostgreSQL
     pg_start() {
       ${postgresql}/bin/pg_ctl \
         -D "$PGDATA" \
@@ -29,32 +28,14 @@ let
       sleep 3
     }
 
-    # Stop PostgreSQL
     pg_stop() {
       ${postgresql}/bin/pg_ctl -D "$PGDATA" stop
     }
 
-    # Get PostgreSQL PID
     pg_get_pid() {
       ${postgresql}/bin/pg_ctl -D "$PGDATA" status | \
         grep -o 'PID: [0-9]*' | cut -d' ' -f2
     }
-  '';
-
-  # Helper script to load all SQL files
-  load-sql = pkgs.writeShellScriptBin "load-sql" ''
-    set -xeuo pipefail
-    ${pgEnvSetup}
-    ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$PWD/database/schema.sql"
-    ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$PWD/database/config.sql"
-
-    # Load migrations in order
-    for migration in "$PWD/database/migrations"/*.sql; do
-      if [ -f "$migration" ]; then
-        echo "Loading migration: $migration"
-        ${postgresql}/bin/psql --host="$PGHOST" -v ON_ERROR_STOP=1 -d graveyard -f "$migration"
-      fi
-    done
   '';
 
   setup = pkgs.writeShellScriptBin "setup" ''
@@ -87,15 +68,29 @@ let
     if ! ${postgresql}/bin/psql \
          --host="$PGHOST" \
          -d postgres \
-         -lqt | cut -d \| -f 1 | grep -qw graveyard; then
-      echo "Creating graveyard database..."
-      ${postgresql}/bin/createdb graveyard --host="$PGHOST"
+         -lqt | cut -d \| -f 1 | grep -qw ${serviceName}; then
+      echo "Creating ${serviceName} database..."
+      ${postgresql}/bin/createdb ${serviceName} --host="$PGHOST"
     else
-      echo "Database 'graveyard' already exists"
+      echo "Database '${serviceName}' already exists"
     fi
 
-    # Load all SQL files
-    load-sql
+    # Run goose migrations
+    echo "Running goose migrations..."
+    GOOSE_DRIVER=postgres \
+    GOOSE_DBSTRING="host=$PGHOST dbname=${serviceName} sslmode=disable" \
+    GOOSE_MIGRATION_DIR=${migrationsDir} \
+      ${goose}/bin/goose up
+
+    # Set JWT secret
+    echo "Setting JWT secret..."
+    ${postgresql}/bin/psql --host="$PGHOST" -d ${serviceName} \
+      -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${devJwtSecret}';"
+
+    # Create dev user
+    echo "Creating dev user..."
+    ${postgresql}/bin/psql --host="$PGHOST" -d ${serviceName} \
+      -c "INSERT INTO graveyard.users (email, password) VALUES ('user@example.com', crypt('password', gen_salt('bf'))) ON CONFLICT (email) DO NOTHING;"
 
     # Stop PostgreSQL if we started it
     if [ "$STARTED_POSTGRES" = true ]; then
@@ -136,9 +131,9 @@ let
     fi
 
     echo "PostgreSQL service started successfully"
-    echo "Database: graveyard"
+    echo "Database: ${serviceName}"
     echo "Socket: $PGHOST/.s.PGSQL.5432"
-    echo "Connection: postgres:///?host=$PGHOST&dbname=graveyard"
+    echo "Connection: postgres:///?host=$PGHOST&dbname=${serviceName}"
     echo "PostgreSQL PID: $POSTGRES_PID"
 
     # Trap to cleanup PostgreSQL on exit
@@ -165,44 +160,16 @@ let
     fi
   '';
 
-  load-dump = pkgs.writeShellScriptBin "load-dump" ''
-    ${pgEnvSetup}
-    ${pgHelpers}
-
-    # Check if database is initialized
-    if [ ! -f "$PGDATA/PG_VERSION" ]; then
-      echo "Error: Database not initialized. Run 'setup' first."
-      exit 1
-    fi
-
-    # Start PostgreSQL temporarily if not running
-    STARTED_POSTGRES=false
-    if ! pg_is_running; then
-      echo "PostgreSQL is not running, starting it temporarily..."
-      pg_start
-      STARTED_POSTGRES=true
-    fi
-
-    # Load all SQL files
-    load-sql
-
-    # Stop PostgreSQL if we started it
-    if [ "$STARTED_POSTGRES" = true ]; then
-      echo "Stopping temporary PostgreSQL instance..."
-      pg_stop
-    fi
-  '';
-
   database = pkgs.writeShellScriptBin "database" ''
     ${pgEnvSetup}
 
-    echo "Connecting to database: graveyard"
-    exec ${postgresql}/bin/psql --host="$PGHOST" -d graveyard
+    echo "Connecting to database: ${serviceName}"
+    exec ${postgresql}/bin/psql --host="$PGHOST" -d ${serviceName}
   '';
 
 in
 {
-  inherit postgresql;
-  scripts = [ setup run-postgres load-sql load-dump database ];
-  buildInputs = [ postgresql ];
+  inherit postgresql goose;
+  scripts = [ setup run-postgres database ];
+  buildInputs = [ postgresql goose ];
 }

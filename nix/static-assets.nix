@@ -35,25 +35,7 @@ let
     '';
   };
 
-  # Fetch postgrest-admin.min.js from GitHub releases
-  postgrestAdmin = pkgs.stdenv.mkDerivation {
-    pname = "postgrest-admin";
-    version = "latest";
-
-    src = pkgs.fetchurl {
-      url = "https://github.com/maca/postgrest-admin/releases/latest/download/postgrest-admin.min.js";
-      sha256 = "sha256-ZJWbLRN1SaG8yErG5oCki9DyqXA2Udcj9RJNoHbd4sI=";
-    };
-
-    dontUnpack = true;
-
-    installPhase = ''
-      mkdir -p $out
-      cp $src $out/postgrest-admin.min.js
-    '';
-  };
-
 in
 {
-  inherit icono milligram postgrestAdmin;
+  inherit icono milligram;
 }

@@ -1,17 +1,14 @@
--- Migration: Add download function for serving files via PostgREST RPC
--- Usage: GET /rpc/download?submission_id=123 (accepts any Accept header)
-
--- Create domain type for any media type handler (in graveyard schema for PostgREST visibility)
+-- +goose Up
+-- +goose StatementBegin
 DO $$
 BEGIN
     CREATE DOMAIN graveyard."*/*" AS bytea;
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
+-- +goose StatementEnd
 
--- Drop existing function if return type changed
-DROP FUNCTION IF EXISTS graveyard.download(int);
-
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION graveyard.download(submission_id int)
 RETURNS graveyard."*/*" AS $$
 DECLARE
@@ -28,7 +25,6 @@ BEGIN
             detail = '{"status": 404, "headers": {}}';
     END IF;
 
-    -- Set response headers for PostgREST
     PERFORM set_config('response.headers',
         format('[{"Content-Type": "%s"}, {"Content-Disposition": "attachment; filename=\"%s\""}]',
             rec.file_mime_type,
@@ -37,10 +33,12 @@ BEGIN
         true
     );
 
-    -- File data is stored as base64 in bytea, decode to raw binary
-    RETURN decode(encode(rec.file, 'escape'), 'base64');
+    -- File is already binary (decoded on insert), return directly
+    RETURN rec.file;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+-- +goose StatementEnd
 
--- Only admin can download files
-GRANT EXECUTE ON FUNCTION graveyard.download(int) TO admin;
+-- +goose Down
+DROP FUNCTION IF EXISTS graveyard.download(int);
+DROP DOMAIN IF EXISTS graveyard."*/*";
