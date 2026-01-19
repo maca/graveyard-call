@@ -17,6 +17,7 @@ body {
     align-items: flex-start;
     gap: 0;
     min-height: 100vh;
+    position: relative;
 }
 
 .side-text-left, .side-text-right {
@@ -37,13 +38,18 @@ body {
     display: flex;
     width: 600px;
     justify-content: center;
+    gap: 12px;
 }
 
-.side-text-left .star, .side-text-right .star {
-    width: 12px;
-    height: 12px;
-    background: url('/star.png') center/contain no-repeat;
-    flex-shrink: 0;
+@media (max-width: 860px) {
+ .side-text-left .vertical-text, .side-text-right .vertical-text {
+    transform: rotate(-90deg) translateY(-290px) translateX(100px);
+  }
+  
+  .side-text-left .stars-row .star:not(:first-child),
+  .side-text-right .stars-row .star:not(:first-child) {
+    display: none;
+  }
 }
 
 .side-text-left a, .side-text-right a {
@@ -68,12 +74,20 @@ body {
 }
 
 .container {
-    width: 480px;
+    width: 400px;
     flex-shrink: 0;
+    transform: scaleX(0.85);
+    transform-origin: center;
+}
+
+@media (max-width: 767px) {
+  .container {
+    width: 300px;
+  }
 }
 
 .content {    
-    width: 390px;
+    width: 90%;
     margin: auto;
 }
 
@@ -81,35 +95,45 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    margin: 0 12px;
+    gap: 8px;
 }
 
 .stars-row .star {
-    width: 14px;
-    height: 14px;
-    background: url('/star.png') center/contain no-repeat;
+    width: 25px;
+    height: 25px;
+    background: url('/stern.png') center/contain no-repeat;
     flex-shrink: 0;
 }
 
-
 .title {
     margin: 30px 0 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
 }
 
 .title h1 {
-    width: 210px;
-    margin: 20px auto;
+    width: 260px;
+    margin: auto;
     color: rgba(255, 255, 255, 0.95);
     text-align: center;
-    font-size: 26px;
-    font-weight: 300;
+    font-size: 30px;
+    font-weight: 400;
     letter-spacing: 6px;
-    line-height: 1.5;
+    line-height: 1;
     letter-spacing: 0.2em;
     text-align: justify;
     text-align-last: justify;
-     white-space: nowrap;
+    white-space: nowrap;
+    font-style: italic;
+    transform: scaleX(0.85);
+    transform-origin: center;
+    transform: scaleY(0.85);
+}
+
+.title .stars-row .star {
+    width: 35px;
+    height: 35px;
 }
 
 .title .char-justify {
@@ -153,28 +177,17 @@ textarea {
     width: 100%;
     padding: 12px 16px;
     margin: 8px 0;
-    background-color: rgba(255, 255, 255, 0.15);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    color: white;
+    background-color: white;
+    color: #2a2cb3;
     font-family: 'Hero New', sans-serif;
     font-size: 16px;
     box-sizing: border-box;
     transition: all 0.2s;
+    font-style: italic;
 }
-
 
 input[type="checkbox"] {
     margin-right: 16px;
-}
-
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="file"]:focus,
-textarea:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.6);
-    background-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
 input[type="text"]::placeholder,
@@ -252,7 +265,7 @@ input[type="submit"]:disabled {
     opacity: 0.6;
 }
 
-.notice, .error {
+.notice, .error, .progress-window {
     position: fixed;
     top: 20px;
     left: 50%;
@@ -292,14 +305,6 @@ input[type="submit"]:disabled {
     z-index: 1000;
 }
 
-.progress-window {
-    background-color: rgba(255, 255, 255, 0.15);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    padding: 32px;
-    min-width: 320px;
-    font-family: 'Hero New', sans-serif;
-}
 
 .progress-title {
     color: white;
@@ -361,25 +366,132 @@ input[type="submit"]:disabled {
 }
 
 
+/* Hairline */
 @font-face {
-    font-family: 'Hero New';
-    src: url('/hero-new/Hero New Regular.otf') format('opentype');
-    font-weight: 400;
-    font-style: normal;
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Hairline.otf");
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Hairline Italic.otf");
+  font-weight: 100;
+  font-style: italic;
 }
 
-
+/* Thin */
 @font-face {
-    font-family: 'Hero New';
-    src: url('/hero-new/Hero New Bold.otf') format('opentype');
-    font-weight: 700;
-    font-style: normal;
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Thin.otf");
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Thin Italic.otf");
+  font-weight: 200;
+  font-style: italic;
 }
 
-
+/* UltraLight */
 @font-face {
-    font-family: 'Hero New';
-    src: url('/hero-new/Hero New Light.otf') format('opentype');
-    font-weight: 300;
-    font-style: normal;
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New UltraLight.otf");
+  font-weight: 300;
+  font-style: normal;
 }
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New UltraLight Italic.otf");
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* Light */
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Light.otf");
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Light Italic.otf");
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* Regular */
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Regular.otf");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Regular Italic.otf");
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Medium */
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Medium.otf");
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Medium Italic.otf");
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* SemiBold */
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New SemiBold.otf");
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New SemiBold Italic.otf");
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* Bold */
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Bold.otf");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New Bold Italic.otf");
+  font-weight: 700;
+  font-style: italic;
+}
+
+/* ExtraBold */
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New ExtraBold.otf");
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Hero New";
+  src: url("/hero-new/Hero New ExtraBold Italic.otf");
+  font-weight: 800;
+  font-style: italic;
+}
+
+/* Super */
+@font-face
+

@@ -60,20 +60,10 @@ type Msg
 
 storyPlaceholders : List String
 storyPlaceholders =
-    [ """Honestly, it felt like my whole world just fell apart when Paris Hilton's
-    Diamond Quest straight-up disappeared. It still hits me like I lost a huge,
-    irreplaceable piece of my life. Who's even responsible for this?? How does stuff
-    like this even happen?? I tried to…"""
-    , """I wiped out over ten years of playlists. Every track was handpicked,
-    repping all the phases I been through, y'know, stuff I'll never get back.
-    Sometimes bits of songs get stuck in my head, but I can't remember neither the
-    words nor how…"""
-    , """My VRChat world, the place I always hung out with one of my best mates,
-    vanished outta nowhere. I loved that world. Now it's just… vanished, no
-    warning, fam. I can't even…"""
-    , """In 2012, my ex nuked my accounts! Ten
-    years of posts, pics, friends whose real names I didn't even know. Security
-    online? Completely insane! But yes… it gets worse…"""
+    [ """Honestly, it felt like my whole world just fell apart when Paris Hilton's Diamond Quest straight-up disappeared. It still hits me like I lost a huge, irreplaceable piece of my life. Who's even responsible for this?? How does stuff like this even happen?? I tried to…"""
+    , """I wiped out over ten years of playlists. Every track was handpicked, repping all the phases I been through, y'know, stuff I'll never get back. Sometimes bits of songs get stuck in my head, but I can't remember neither the words nor how…"""
+    , """My VRChat world, the place I always hung out with one of my best mates, vanished outta nowhere. I loved that world. Now it's just… vanished, no warning, fam. I can't even…"""
+    , """In 2012, my ex nuked my accounts! Ten years of posts, pics, friends whose real names I didn't even know. Security online? Completely insane! But yes… it gets worse…"""
     ]
 
 
@@ -87,14 +77,9 @@ init _ =
       }
     , Cmd.batch
         [ Task.perform GotTime Time.now
-        , Task.attempt GotToken (fetchJwtTokenAfter tokenTTL)
+        , Task.attempt GotToken (fetchJwtTokenAfter 1000)
         ]
     )
-
-
-tokenTTL : number
-tokenTTL =
-    10000
 
 
 fetchJwtTokenAfter : Float -> Task.Task Http.Error String
@@ -145,18 +130,15 @@ fields placeholderIndex =
         []
         [ Field.text
             [ Field.identifier "name"
-            , Field.label "Name"
-            , Field.hint "Enter your name or a username you'd like to use."
+            , Field.label "Enter your name or a username"
             ]
         , Field.text
             [ Field.identifier "email"
-            , Field.label "Email"
-            , Field.hint "Provide your email if you'd like to receive updates about the project."
+            , Field.label "Want to stay connected? Leave your email"
             ]
         , Field.text
             [ Field.identifier "residence"
-            , Field.label "Place of residence"
-            , Field.hint "Optionally, share where you are based."
+            , Field.label "Feel free Optionally, share where you are based"
             ]
         , Field.textarea
             [ Field.identifier "story"
@@ -166,7 +148,7 @@ fields placeholderIndex =
             ]
         , Field.file
             [ Field.identifier "file"
-            , Field.label "Upload an image, short video, 3D object (glb), or audio file that represents your experience of loss"
+            , Field.label "Feel free to upload an Image, Video, 3D Object, or Audio file representing your Experience of Loss"
             , Field.hint "Maximum size: 15 MB."
             , Field.required True
             , Field.max (Value.int 15728640)
@@ -448,8 +430,9 @@ viewInvitationText : Html msg
 viewInvitationText =
     Html.div
         [ Attrs.class "invitation-text" ]
-        [ Html.text
-            """SOAP invites you to share your personal experiences of data
+        [ Html.span [ Attrs.style "text-decoration" "underline" ] [ Html.text "With The last Entry" ]
+        , Html.text
+            """, SOAP invites you to share your personal experiences of data
             loss on the internet. We want to hear your stories and memories
             shaped by erasure or disappearance in digital environments: lost
             accounts, wiped archives and servers, vanished or sunset platforms,
@@ -490,8 +473,7 @@ viewForm model =
                                                 []
                                             , Html.text "I have read and agree to the "
                                             , Html.a
-                                                [ Attrs.href "/consent.html"
-                                                , Attrs.target "_blank"
+                                                [ Attrs.href "#consent"
                                                 , Attrs.class "consent-link"
                                                 ]
                                                 [ Html.text "Consent to Use Submitted Content" ]
@@ -508,6 +490,17 @@ viewForm model =
             , Html.button
                 [ Attrs.type_ "submit" ]
                 [ Html.text "Submit your loss" ]
+            , Html.p
+                [ Attrs.id "consent" ]
+                [ Html.text """
+                  You confirm that you are the creator of the submitted materials
+                  or hold the necessary rights, and that no third-party rights are
+                  violated. You grant the artist collective SOAP a non-exclusive,
+                  global, and unlimited right to use, reproduce, edit, publish,
+                  and publicly present the materials for artistic and documentary
+                  purposes, including in virtual environments (e.g., VRChat),
+                  while copyright remains with the author."""
+                ]
             ]
         , case model.notice of
             NoNotice ->
