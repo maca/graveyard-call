@@ -178,7 +178,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         FieldsChanged innerMsg ->
-            ( { model | fields = Field.update innerMsg model.fields }
+            let
+                ( updatedFields, _ ) =
+                    Parse.parseUpdate (Parse.field "file" Parse.file) innerMsg model.fields
+            in
+            ( { model | fields = updatedFields }
             , Cmd.none
             )
 
@@ -187,17 +191,18 @@ update msg model =
                 ( model.jwtToken
                 , Parse.parse (Parse.field "file" Parse.file) model.fields
                 , Parse.parse (Parse.field "consent" Parse.bool) model.fields
-                    |> Debug.log "consent"
-                    |> Result.withDefault False
                 )
             of
-                ( _, _, False ) ->
-                    showNotice (Error "Please provide a memory, and agree to the consent to use submitted content.") model
+                ( _, _, Err _ ) ->
+                    showNotice (Error "Please provide a memory.") model
+
+                ( _, _, Ok False ) ->
+                    showNotice (Error "Please agree to the consent to use submitted content.") model
 
                 ( Nothing, _, _ ) ->
                     ( model, Task.perform (always FormSubmitted) (Process.sleep 500) )
 
-                ( Just _, Ok file, True ) ->
+                ( Just _, Ok file, _ ) ->
                     ( model, Task.perform (GotBytes file) (File.toBytes file) )
 
                 ( _, _, _ ) ->
