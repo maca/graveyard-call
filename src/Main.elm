@@ -342,56 +342,63 @@ showNotice notice model =
 view : Model -> Html Msg
 view model =
     Html.div
-        []
+        [ Attrs.class "content-wrapper" ]
         [ Html.div
-            [ Attrs.class "content-wrapper" ]
-            [ Html.div
-                [ Attrs.class "side-text-left" ]
-                [ Html.div
-                    [ Attrs.class "vertical-text" ]
-                    [ Html.a
-                        [ Attrs.href "https://www.argekultur.at/"
-                        , Attrs.target "_blank"
-                        ]
-                        [ Html.text "ARGEkultur Salzburg" ]
-                    , viewStars 3
-                    , Html.a
-                        [ Attrs.href "https://schauspielhaus-graz.buehnen-graz.com/"
-                        , Attrs.target "_blank"
-                        ]
-                        [ Html.text "Schauspielhaus Graz" ]
+            [ Attrs.class "side-text-left" ]
+            [ Html.div [ Attrs.class "ornament top-left" ] []
+            , Html.div [ Attrs.class "ornament bottom-left" ] []
+            , Html.div
+                [ Attrs.class "vertical-text" ]
+                [ Html.a
+                    [ Attrs.href "https://www.argekultur.at/"
+                    , Attrs.target "_blank"
                     ]
+                    [ Html.text "ARGEkultur Salzburg" ]
+                , viewStars 3
+                , Html.a
+                    [ Attrs.href "https://schauspielhaus-graz.buehnen-graz.com/"
+                    , Attrs.target "_blank"
+                    ]
+                    [ Html.text "Schauspielhaus Graz" ]
                 ]
+            ]
+        , Html.div
+            [ Attrs.class "container" ]
+            [ viewTitle
+            , Html.div [ Attrs.class "emblem-container" ] []
+            , viewForm model
+            , viewTitle
+            ]
+        , Html.div
+            [ Attrs.class "side-text-right" ]
+            [ Html.div [ Attrs.class "ornament top-right" ] []
+            , Html.div [ Attrs.class "ornament bottom-right" ] []
             , Html.div
-                [ Attrs.class "container" ]
-                [ viewTitle
-                , Html.div [ Attrs.class "emblem-container" ] []
-                , viewForm model
-                , viewTitle
-                ]
-            , Html.div
-                [ Attrs.class "side-text-right" ]
-                [ Html.div [ Attrs.class "vertical-text" ]
+                [ Attrs.class "vertical-text" ]
+                [ Html.div
+                    []
                     [ Html.a
-                        [ Attrs.href "https://someonlinearchitecturepractice.com/"
-                        , Attrs.target "_blank"
-                        ]
-                        [ Html.text "SOAP" ]
-                    , viewStars 3
-                    , Html.a
                         [ Attrs.href "https://www.hebbel-am-ufer.de/en/"
                         , Attrs.target "_blank"
                         ]
                         [ Html.text "HAU Hebbel am Ufer" ]
+
+                    -- , viewStars 3
+                    -- , Html.a
+                    --     [ Attrs.href "https://theaternetzwerk.digital/"
+                    --     , Attrs.target "_blank"
+                    --     ]
+                    --     [ Html.text "theaternetzwerk.digital" ]
                     , viewStars 3
                     , Html.a
-                        [ Attrs.href "https://theaternetzwerk.digital/"
+                        [ Attrs.href "https://someonlinearchitecturepractice.com/"
                         , Attrs.target "_blank"
                         ]
-                        [ Html.text "theaternetzwerk.digital" ]
+                        [ Html.text "SOAP" ]
                     ]
                 ]
             ]
+        , Html.div [ Attrs.class "ornament right-middle" ] []
         , case model.progress of
             Just progress ->
                 viewProgressWindow progress
@@ -428,7 +435,7 @@ viewTitle =
 
 viewInvitationText : Html msg
 viewInvitationText =
-    Html.div
+    Html.p
         [ Attrs.class "invitation-text" ]
         [ Html.span [ Attrs.style "text-decoration" "underline" ] [ Html.text "With The last Entry" ]
         , Html.text
