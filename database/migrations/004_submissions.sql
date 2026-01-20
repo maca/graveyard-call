@@ -4,17 +4,17 @@ CREATE TABLE graveyard.submissions (
     email VARCHAR(512),
     name VARCHAR,
     residence VARCHAR,
-    story TEXT,
-    file BYTEA NOT NULL,
-    file_name VARCHAR NOT NULL,
-    file_mime_type VARCHAR(128) NOT NULL,
+    story TEXT NOT NULL,
+    file BYTEA,
+    file_name VARCHAR,
+    file_mime_type VARCHAR(128),
     consent_given BOOLEAN NOT NULL DEFAULT FALSE,
     consent_version VARCHAR(16) NOT NULL DEFAULT 'v1.0',
     jwt_token TEXT UNIQUE,
     created_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT file_size_limit CHECK (octet_length(file) <= 31457280),
     CONSTRAINT valid_mime_type CHECK (
-        file_mime_type IN (
+        file_mime_type IS NULL OR file_mime_type IN (
             'image/jpeg',
             'image/png',
             'image/heic',
@@ -34,7 +34,9 @@ CREATE TABLE graveyard.submissions (
 CREATE OR REPLACE FUNCTION graveyard.decode_file_on_insert()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.file := decode(encode(NEW.file, 'escape'), 'base64');
+    IF NEW.file IS NOT NULL THEN
+        NEW.file := decode(encode(NEW.file, 'escape'), 'base64');
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

@@ -49,7 +49,8 @@ type alias Model =
 type Msg
     = FieldsChanged (Field.Msg String)
     | FormSubmitted
-    | GotBytes Bytes
+    | GotBytes File.File Bytes
+    | FormReady (Maybe File)
     | Uploaded (Result Http.Error ())
     | GotProgress Http.Progress
     | CancelUpload
@@ -143,6 +144,7 @@ fields placeholderIndex =
         , Field.textarea
             [ Field.identifier "story"
             , Field.label "Share the memory of your loss"
+            , Field.required True
             , Field.autogrow True
             , Field.placeholder placeholder
             ]
@@ -150,7 +152,6 @@ fields placeholderIndex =
             [ Field.identifier "file"
             , Field.label "Feel free to upload an Image, Video, 3D Object, or Audio file representing your Experience of Loss"
             , Field.hint "Maximum size: 15 MB."
-            , Field.required True
             , Field.max (Value.int 15728640)
             , Field.accept
                 [ "image/jpeg"
@@ -186,43 +187,52 @@ update msg model =
                 ( model.jwtToken
                 , Parse.parse (Parse.field "file" Parse.file) model.fields
                 , Parse.parse (Parse.field "consent" Parse.bool) model.fields
+                    |> Debug.log "consent"
                     |> Result.withDefault False
                 )
             of
-                ( _, Err _, _ ) ->
-                    showNotice (Error "Please select a file.") model
-
                 ( _, _, False ) ->
-                    showNotice (Error "Please agree to the consent to use submitted content.") model
-
-                ( Just _, Ok file, True ) ->
-                    ( model, Task.perform GotBytes (File.toBytes file) )
+                    showNotice (Error "Please provide a memory, and agree to the consent to use submitted content.") model
 
                 ( Nothing, _, _ ) ->
-                    ( model
-                    , Task.perform (always FormSubmitted) (Process.sleep 500)
-                    )
+                    ( model, Task.perform (always FormSubmitted) (Process.sleep 500) )
 
-        GotBytes bytes ->
-            case Parse.parse (Parse.field "file" Parse.file) model.fields of
-                Ok file ->
-                    ( model
-                    , Http.request
-                        { method = "POST"
-                        , headers =
-                            [ Http.header "Authorization"
-                                ("Bearer " ++ (model.jwtToken |> Maybe.withDefault ""))
-                            ]
-                        , url = "/api/submissions"
-                        , body = Http.jsonBody (encodeSubmission model.fields bytes (File.name file) (File.mime file))
-                        , expect = Http.expectWhatever Uploaded
-                        , timeout = Nothing
-                        , tracker = Just "submission"
-                        }
-                    )
+                ( Just _, Ok file, True ) ->
+                    ( model, Task.perform (GotBytes file) (File.toBytes file) )
 
-                Err _ ->
-                    showNotice (Error "Failed to read file information.") model
+                ( _, _, _ ) ->
+                    ( model, Task.perform identity (Task.succeed (FormReady Nothing)) )
+
+        GotBytes file bytes ->
+            ( model
+            , Task.perform identity
+                (Task.succeed
+                    (FormReady
+                        (Just
+                            { file = bytes
+                            , name = File.name file
+                            , mimeType = File.mime file
+                            }
+                        )
+                    )
+                )
+            )
+
+        FormReady maybeFile ->
+            ( model
+            , Http.request
+                { method = "POST"
+                , headers =
+                    [ Http.header "Authorization"
+                        ("Bearer " ++ (model.jwtToken |> Maybe.withDefault ""))
+                    ]
+                , url = "/api/submissions"
+                , body = Http.jsonBody (encodeSubmission model.fields maybeFile)
+                , expect = Http.expectWhatever Uploaded
+                , timeout = Nothing
+                , tracker = Just "submission"
+                }
+            )
 
         GotProgress (Http.Sending progress) ->
             ( { model | progress = Just progress }, Cmd.none )
@@ -292,8 +302,15 @@ update msg model =
             )
 
 
-encodeSubmission : Field String -> Bytes -> String -> String -> Encode.Value
-encodeSubmission formFields file fileName mimeType =
+type alias File =
+    { file : Bytes
+    , name : String
+    , mimeType : String
+    }
+
+
+encodeSubmission : Field String -> Maybe File -> Encode.Value
+encodeSubmission formFields file =
     let
         parseMaybe name =
             Parse.field name (Parse.maybe Parse.string)
@@ -301,9 +318,13 @@ encodeSubmission formFields file fileName mimeType =
 
         encoded =
             file
-                |> Base64.fromBytes
-                |> Maybe.withDefault ""
-                |> Encode.string
+                |> Maybe.map
+                    (.file
+                        >> Base64.fromBytes
+                        >> Maybe.withDefault ""
+                        >> Encode.string
+                    )
+                |> Maybe.withDefault Encode.null
     in
     Parse.parse
         (Parse.succeed
@@ -311,8 +332,18 @@ encodeSubmission formFields file fileName mimeType =
                 Encode.object
                     (List.filterMap identity
                         [ Just ( "file", encoded )
-                        , Just ( "file_name", Encode.string fileName )
-                        , Just ( "file_mime_type", Encode.string mimeType )
+                        , Just
+                            ( "file_name"
+                            , file
+                                |> Maybe.map (.name >> Encode.string)
+                                |> Maybe.withDefault Encode.null
+                            )
+                        , Just
+                            ( "file_mime_type"
+                            , file
+                                |> Maybe.map (.mimeType >> Encode.string)
+                                |> Maybe.withDefault Encode.null
+                            )
                         , Just ( "consent_given", Encode.bool consent )
                         , Just ( "consent_version", Encode.string "v1.0" )
                         , name

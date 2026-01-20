@@ -12,6 +12,9 @@ let
     export PGDATA=$PWD/database/pgdata
     export PGHOST=$PWD/database/pgdata
     export PGDATABASE=${serviceName}
+    export GOOSE_DRIVER=postgres
+    export GOOSE_DBSTRING="host=$PGHOST dbname=${serviceName} sslmode=disable"
+    export GOOSE_MIGRATION_DIR=$PWD/database/migrations
   '';
 
   pgHelpers = ''
