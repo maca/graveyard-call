@@ -547,13 +547,17 @@ viewForm model =
                 [ Html.text "Submit your loss" ]
             , Html.p
                 [ Attrs.id "consent"
-                , if model.consentVisible then
-                    Attrs.class ""
+                ]
+                [ if model.consentVisible then
+                    Html.text """You confirm that you are the creator of the
+                    submitted materials or hold the necessary rights, and that no third-party rights
+                    are violated. You grant the artist collective SOAP a non-exclusive, global,
+                    and unlimited right to use, reproduce, edit, publish, and publicly present
+                    the materials for artistic and documentary purposes, including in virtual
+                    environments (e.g., VRChat), while copyright remains with the author."""
 
                   else
-                    Attrs.style "display" "none"
-                ]
-                [ Html.text """You confirm that you are the creator of the submitted materials or hold the necessary rights, and that no third-party rights are violated. You grant the artist collective SOAP a non-exclusive, global, and unlimited right to use, reproduce, edit, publish, and publicly present the materials for artistic and documentary purposes, including in virtual environments (e.g., VRChat), while copyright remains with the author."""
+                    Html.text ""
                 ]
             ]
         , case model.notice of
