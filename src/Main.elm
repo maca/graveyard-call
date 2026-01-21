@@ -154,8 +154,9 @@ fields placeholderIndex =
             ]
         , Field.file
             [ Field.identifier "file"
-            , Field.label "Feel free to upload an Image, Video, 3D Object, or Audio file representing your Experience of Loss"
-            , Field.hint "Maximum size: 15 MB/ jpg/png/heic/heif, mp3/m4a, mp4/mov, glb/fbx."
+            , Field.label "Feel free to upload an Image, Video, 3D Object, or Audio file representing your Experience of Loss. Maximum size: 15 MB/ jpg/png/heic/heif, mp3/m4a, mp4/mov, glb/fbx."
+
+            -- , Field.hint "Maximum size: 15 MB/ jpg/png/heic/heif, mp3/m4a, mp4/mov, glb/fbx."
             , Field.max (Value.int 15728640)
             , Field.accept
                 [ "image/jpeg"
@@ -428,11 +429,6 @@ view model =
                         ]
                         [ Html.text "theaternetzwerk.digital" ]
                     , viewStars 3
-                    , Html.a
-                        [ Attrs.href "https://someonlinearchitecturepractice.com/"
-                        , Attrs.target "_blank"
-                        ]
-                        [ Html.text "SOAP" ]
 
                     -- , viewStars 3
                     , Html.a
@@ -441,6 +437,11 @@ view model =
                         ]
                         [ Html.text "HAU Hebbel am Ufer" ]
                     ]
+                , Html.a
+                    [ Attrs.href "https://someonlinearchitecturepractice.com/"
+                    , Attrs.target "_blank"
+                    ]
+                    [ Html.text "SOAP" ]
                 ]
             ]
         , Html.div [ Attrs.class "ornament right-middle" ] []
