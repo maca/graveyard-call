@@ -25,7 +25,7 @@ body {
   display: none;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 760px) {
   .content-wrapper { width: 100%; }
 
   .side-text-left .stars-row .star:not(:first-child),
@@ -44,6 +44,41 @@ body {
 }
 
 
+
+
+
+
+/* .side-text-left, .side-text-right { */
+    /* position: sticky; */
+    /* top: 25vh; */
+    /* width: 20px; */
+    /* font-size: 14px; */
+    /* letter-spacing: 2px; */
+    /* font-weight: 300; */
+    /* white-space: nowrap; */
+    /* align-items: center; */
+    /* gap: 12px; */
+    /* padding-top: 240px; */
+/* } */
+
+
+/* @media (max-width: 860px) { */
+ /* .side-text-left .vertical-text, .side-text-right .vertical-text { */
+    /* transform: rotate(-90deg) translateY(-290px) translateX(100px); */
+  /* } */
+  
+  /* .side-text-left .stars-row .star:not(:first-child), */
+  /* .side-text-right .stars-row .star:not(:first-child) { */
+    /* display: none; */
+  /* } */
+/* } */
+
+
+
+
+
+
+
 .side-text-left, .side-text-right {
     position: sticky;
     top: 0;
@@ -56,26 +91,25 @@ body {
     letter-spacing: 2px;
     font-weight: 500;
     white-space: nowrap;
-    writing-mode: sideways-lr;
-    text-orientation: mixed;
-    top: 0;
-    height: 100vh;
-    white-space: nowrap;
-}
-
-.side-text-right .vertical-text {
-    padding-top: 140px;
 }
 
 .side-text-left .vertical-text, .side-text-right .vertical-text {
+    transform: rotate(-90deg) translateY(0px);
+    display: flex;
+    justify-content: center;
+    gap: 12px;
     position: sticky;
     top: 0;
     display: flex;
     gap: 12px;
     align-items: center;
     justify-content: center;
-    height: 500px;
 }
+
+.side-text-right .vertical-text {
+    padding-right: 140px;
+}
+
 
 .vertical-text > div {
     display: flex;
@@ -92,10 +126,10 @@ body {
     content: '';
 }
 
-.ornament.top-left { top: 15px; left: 0px; }
-.ornament.top-left::after { top: 18px; }
-.ornament.top-right { top: 15px; right: 0 }
-.ornament.top-right::after { top: 18px; }
+.ornament.top-left { top: 15px; left: 8px; }
+.ornament.top-left::after { top: 18px; left: 0px }
+.ornament.top-right { top: 15px; right: 8px }
+.ornament.top-right::after { top: 18px; right: 0 }
 .ornament.bottom-left { bottom: 10px; left: 0; }
 .ornament.bottom-left::after { left: 18px; bottom: 0; }
 .ornament.bottom-right { bottom: 10px; right: 0; }
