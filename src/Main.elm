@@ -136,11 +136,11 @@ fields placeholderIndex =
             ]
         , Field.text
             [ Field.identifier "email"
-            , Field.label "Want to stay connected? Leave your email"
+            , Field.label "Leave your email and stay connected"
             ]
         , Field.text
             [ Field.identifier "residence"
-            , Field.label "Feel free Optionally, share where you are based"
+            , Field.label "Optionally, share where you are based"
             ]
         , Field.textarea
             [ Field.identifier "story"
@@ -152,7 +152,7 @@ fields placeholderIndex =
         , Field.file
             [ Field.identifier "file"
             , Field.label "Feel free to upload an Image, Video, 3D Object, or Audio file representing your Experience of Loss"
-            , Field.hint "Maximum size: 15 MB."
+            , Field.hint "Maximum size: 15 MB/ jpg/png/heic/heif, mp3/m4a, mp4/mov, glb/fbx."
             , Field.max (Value.int 15728640)
             , Field.accept
                 [ "image/jpeg"
@@ -417,23 +417,23 @@ view model =
                 [ Html.div
                     []
                     [ Html.a
-                        [ Attrs.href "https://www.hebbel-am-ufer.de/en/"
+                        [ Attrs.href "https://theaternetzwerk.digital/"
                         , Attrs.target "_blank"
                         ]
-                        [ Html.text "HAU Hebbel am Ufer" ]
-
-                    -- , viewStars 3
-                    -- , Html.a
-                    --     [ Attrs.href "https://theaternetzwerk.digital/"
-                    --     , Attrs.target "_blank"
-                    --     ]
-                    --     [ Html.text "theaternetzwerk.digital" ]
+                        [ Html.text "theaternetzwerk.digital" ]
                     , viewStars 3
                     , Html.a
                         [ Attrs.href "https://someonlinearchitecturepractice.com/"
                         , Attrs.target "_blank"
                         ]
                         [ Html.text "SOAP" ]
+
+                    -- , viewStars 3
+                    , Html.a
+                        [ Attrs.href "https://www.hebbel-am-ufer.de/en/"
+                        , Attrs.target "_blank"
+                        ]
+                        [ Html.text "HAU Hebbel am Ufer" ]
                     ]
                 ]
             ]
@@ -476,7 +476,8 @@ viewInvitationText : Html msg
 viewInvitationText =
     Html.p
         [ Attrs.class "invitation-text" ]
-        [ Html.span [ Attrs.style "text-decoration" "underline" ] [ Html.text "With The last Entry" ]
+        [ Html.text "With "
+        , Html.span [ Attrs.style "text-decoration" "underline" ] [ Html.text "The last Entry" ]
         , Html.text
             """, SOAP invites you to share your personal experiences of data
             loss on the internet. We want to hear your stories and memories

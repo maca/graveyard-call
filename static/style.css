@@ -3,7 +3,7 @@ body {
     margin: 0;
     background: #2a2cb3;
     min-height: 100vh;
-    color: #F5F5F5;
+    color: #fff;
     font-family: 'Hero New', sans-serif;
     font-size: 16px;
     position: relative;
@@ -106,10 +106,9 @@ body {
     justify-content: center;
 }
 
-.side-text-right .vertical-text {
-    padding-right: 140px;
+.side-text-left .vertical-text {
+    padding-right: 30px;
 }
-
 
 .vertical-text > div {
     display: flex;
@@ -138,20 +137,17 @@ body {
 .ornament.right-middle::after { top: 18px; left: 0; }
 
 .side-text-left a, .side-text-right a {
-    color: rgba(255, 255, 255, 0.9);
+    color: white;
     text-decoration: none;
-    transition: color 0.2s;
 }
 
 .side-text-left a:hover, .side-text-right a:hover {
-    color: rgba(255, 255, 255, 1);
     text-decoration: underline;
 }
 
 .consent-link {
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255);
     text-decoration: underline;
-    transition: font-style 0.2s;
 }
 
 .consent-link:hover {
@@ -248,6 +244,11 @@ fieldset {
    border: none;
 }
 
+#file-4-label {
+    padding: 30px 0;
+    display: block;
+}
+
 input[type="text"],
 input[type="email"],
 input[type="file"],
@@ -271,7 +272,7 @@ input[type="checkbox"] {
 input[type="text"]::placeholder,
 input[type="email"]::placeholder,
 textarea::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(43, 44, 179, 0.8);
 }
 
 textarea {
