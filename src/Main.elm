@@ -292,10 +292,6 @@ update msg model =
 
 formSubmitted : Model -> ( Model, Cmd Msg )
 formSubmitted model =
-    let
-        _ =
-            Debug.log "model" model
-    in
     case
         ( model.jwtToken
         , Parse.parse (Parse.field "file" Parse.file) model.fields
