@@ -4,6 +4,7 @@ import Base64
 import Browser
 import Bytes exposing (Bytes)
 import File
+import FormToolkit.Error
 import FormToolkit.Field as Field exposing (Field)
 import FormToolkit.Parse as Parse
 import FormToolkit.Value as Value
@@ -178,35 +179,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         FieldsChanged innerMsg ->
-            let
-                ( updatedFields, _ ) =
-                    Parse.parseUpdate (Parse.field "file" Parse.file) innerMsg model.fields
-            in
-            ( { model | fields = updatedFields }
+            ( { model | fields = Field.update innerMsg model.fields }
             , Cmd.none
             )
 
         FormSubmitted ->
-            case
-                ( model.jwtToken
-                , Parse.parse (Parse.field "file" Parse.file) model.fields
-                , Parse.parse (Parse.field "consent" Parse.bool) model.fields
-                )
-            of
-                ( _, _, Err _ ) ->
-                    showNotice (Error "Please provide a memory.") model
-
-                ( _, _, Ok False ) ->
-                    showNotice (Error "Please agree to the consent to use submitted content.") model
-
-                ( Nothing, _, _ ) ->
-                    ( model, Task.perform (always FormSubmitted) (Process.sleep 500) )
-
-                ( Just _, Ok file, _ ) ->
-                    ( model, Task.perform (GotBytes file) (File.toBytes file) )
-
-                ( _, _, _ ) ->
-                    ( model, Task.perform identity (Task.succeed (FormReady Nothing)) )
+            formSubmitted { model | fields = Field.validate model.fields }
 
         GotBytes file bytes ->
             ( model
@@ -224,20 +202,25 @@ update msg model =
             )
 
         FormReady maybeFile ->
-            ( model
-            , Http.request
-                { method = "POST"
-                , headers =
-                    [ Http.header "Authorization"
-                        ("Bearer " ++ (model.jwtToken |> Maybe.withDefault ""))
-                    ]
-                , url = "/api/submissions"
-                , body = Http.jsonBody (encodeSubmission model.fields maybeFile)
-                , expect = Http.expectWhatever Uploaded
-                , timeout = Nothing
-                , tracker = Just "submission"
-                }
-            )
+            case Parse.parse (parser maybeFile) model.fields of
+                Ok value ->
+                    ( model
+                    , Http.request
+                        { method = "POST"
+                        , headers =
+                            [ Http.header "Authorization"
+                                ("Bearer " ++ (model.jwtToken |> Maybe.withDefault ""))
+                            ]
+                        , url = "/api/submissions"
+                        , body = Http.jsonBody value
+                        , expect = Http.expectWhatever Uploaded
+                        , timeout = Nothing
+                        , tracker = Just "submission"
+                        }
+                    )
+
+                Err err ->
+                    showNotice (Error (FormToolkit.Error.toEnglish err)) model
 
         GotProgress (Http.Sending progress) ->
             ( { model | progress = Just progress }, Cmd.none )
@@ -307,6 +290,34 @@ update msg model =
             )
 
 
+formSubmitted : Model -> ( Model, Cmd Msg )
+formSubmitted model =
+    let
+        _ =
+            Debug.log "model" model
+    in
+    case
+        ( model.jwtToken
+        , Parse.parse (Parse.field "file" Parse.file) model.fields
+        , Parse.parse (Parse.field "consent" Parse.bool) model.fields
+        )
+    of
+        ( _, _, Err _ ) ->
+            showNotice (Error "Please check the form fields.") model
+
+        ( _, _, Ok False ) ->
+            showNotice (Error "Please agree to the consent to use submitted content.") model
+
+        ( Nothing, _, _ ) ->
+            ( model, Task.perform (always FormSubmitted) (Process.sleep 500) )
+
+        ( Just _, Ok file, _ ) ->
+            ( model, Task.perform (GotBytes file) (File.toBytes file) )
+
+        ( _, _, _ ) ->
+            ( model, Task.perform identity (Task.succeed (FormReady Nothing)) )
+
+
 type alias File =
     { file : Bytes
     , name : String
@@ -314,8 +325,8 @@ type alias File =
     }
 
 
-encodeSubmission : Field String -> Maybe File -> Encode.Value
-encodeSubmission formFields file =
+parser : Maybe File -> Parse.Parser String Encode.Value
+parser file =
     let
         parseMaybe name =
             Parse.field name (Parse.maybe Parse.string)
@@ -331,41 +342,37 @@ encodeSubmission formFields file =
                     )
                 |> Maybe.withDefault Encode.null
     in
-    Parse.parse
-        (Parse.succeed
-            (\name email residence story consent ->
-                Encode.object
-                    (List.filterMap identity
-                        [ Just ( "file", encoded )
-                        , Just
-                            ( "file_name"
-                            , file
-                                |> Maybe.map (.name >> Encode.string)
-                                |> Maybe.withDefault Encode.null
-                            )
-                        , Just
-                            ( "file_mime_type"
-                            , file
-                                |> Maybe.map (.mimeType >> Encode.string)
-                                |> Maybe.withDefault Encode.null
-                            )
-                        , Just ( "consent_given", Encode.bool consent )
-                        , Just ( "consent_version", Encode.string "v1.0" )
-                        , name
-                        , email
-                        , residence
-                        , story
-                        ]
-                    )
-            )
-            |> Parse.andMap (parseMaybe "name")
-            |> Parse.andMap (parseMaybe "email")
-            |> Parse.andMap (parseMaybe "residence")
-            |> Parse.andMap (parseMaybe "story")
-            |> Parse.andMap (Parse.field "consent" Parse.bool)
+    Parse.succeed
+        (\name email residence story consent ->
+            Encode.object
+                (List.filterMap identity
+                    [ Just ( "file", encoded )
+                    , Just
+                        ( "file_name"
+                        , file
+                            |> Maybe.map (.name >> Encode.string)
+                            |> Maybe.withDefault Encode.null
+                        )
+                    , Just
+                        ( "file_mime_type"
+                        , file
+                            |> Maybe.map (.mimeType >> Encode.string)
+                            |> Maybe.withDefault Encode.null
+                        )
+                    , Just ( "consent_given", Encode.bool consent )
+                    , Just ( "consent_version", Encode.string "v1.0" )
+                    , name
+                    , email
+                    , residence
+                    , story
+                    ]
+                )
         )
-        formFields
-        |> Result.withDefault Encode.null
+        |> Parse.andMap (parseMaybe "name")
+        |> Parse.andMap (parseMaybe "email")
+        |> Parse.andMap (parseMaybe "residence")
+        |> Parse.andMap (parseMaybe "story")
+        |> Parse.andMap (Parse.field "consent" Parse.bool)
 
 
 showNotice : Notice -> Model -> ( Model, Cmd Msg )

@@ -21,6 +21,10 @@ body {
     margin: auto;
 }
 
+.mobile-break {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .content-wrapper { width: 100%; }
 
@@ -30,8 +34,13 @@ body {
   }
 
   form { width: 100% !important; }
+  .notice, .error, .progress-window {
+        width: 100% !important;
+  }
 
   .ornament.right-middle { display: none}
+
+  .mobile-break { display: block; }
 }
 
 
