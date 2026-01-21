@@ -547,6 +547,11 @@ viewForm model =
                 [ Html.text "Submit your loss" ]
             , Html.p
                 [ Attrs.id "consent"
+                , if model.consentVisible then
+                    Attrs.class "consent-visible"
+
+                  else
+                    Attrs.class ""
                 ]
                 [ if model.consentVisible then
                     Html.text """You confirm that you are the creator of the

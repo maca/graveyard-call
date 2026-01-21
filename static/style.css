@@ -154,8 +154,8 @@ body {
     font-style: italic;
 }
 
-#consent {
-    padding: 20px 0 !important;
+.consent-visible {
+    padding: 10px 0 !important;
 }
 
 
