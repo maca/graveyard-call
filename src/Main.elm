@@ -299,7 +299,7 @@ formSubmitted model =
         )
     of
         ( _, _, Err _ ) ->
-            showNotice (Error "Please provide a memory and optionally a file upload.") model
+            showNotice (Error "Please share your memory. All other fields are optional.") model
 
         ( _, _, Ok False ) ->
             showNotice (Error "Please agree to the consent to use submitted content.") model
