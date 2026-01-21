@@ -154,6 +154,10 @@ body {
     font-style: italic;
 }
 
+#consent {
+    padding: 20px 0 !important;
+}
+
 
 .title, p, label {
     transform: scaleX(0.85);
