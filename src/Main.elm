@@ -44,6 +44,7 @@ type alias Model =
     , progress : Maybe { sent : Int, size : Int }
     , jwtToken : Maybe String
     , placeholderIndex : Int
+    , consentVisible : Bool
     }
 
 
@@ -58,6 +59,7 @@ type Msg
     | GotToken (Result Http.Error String)
     | DismissNotice Notice
     | GotTime Time.Posix
+    | ToggleConsent
 
 
 storyPlaceholders : List String
@@ -76,6 +78,7 @@ init _ =
       , progress = Nothing
       , jwtToken = Nothing
       , placeholderIndex = 0
+      , consentVisible = False
       }
     , Cmd.batch
         [ Task.perform GotTime Time.now
@@ -288,6 +291,9 @@ update msg model =
               }
             , Cmd.none
             )
+
+        ToggleConsent ->
+            ( { model | consentVisible = not model.consentVisible }, Cmd.none )
 
 
 formSubmitted : Model -> ( Model, Cmd Msg )
@@ -522,6 +528,8 @@ viewForm model =
                                             , Html.a
                                                 [ Attrs.href "#consent"
                                                 , Attrs.class "consent-link"
+                                                , Events.preventDefaultOn "click"
+                                                    (Decode.succeed ( ToggleConsent, False ))
                                                 ]
                                                 [ Html.text "Consent to Use Submitted Content" ]
                                             , Html.text "."
@@ -538,15 +546,14 @@ viewForm model =
                 [ Attrs.type_ "submit" ]
                 [ Html.text "Submit your loss" ]
             , Html.p
-                [ Attrs.id "consent" ]
-                [ Html.text """
-                  You confirm that you are the creator of the submitted materials
-                  or hold the necessary rights, and that no third-party rights are
-                  violated. You grant the artist collective SOAP a non-exclusive,
-                  global, and unlimited right to use, reproduce, edit, publish,
-                  and publicly present the materials for artistic and documentary
-                  purposes, including in virtual environments (e.g., VRChat),
-                  while copyright remains with the author."""
+                [ Attrs.id "consent"
+                , if model.consentVisible then
+                    Attrs.class ""
+
+                  else
+                    Attrs.style "display" "none"
+                ]
+                [ Html.text """You confirm that you are the creator of the submitted materials or hold the necessary rights, and that no third-party rights are violated. You grant the artist collective SOAP a non-exclusive, global, and unlimited right to use, reproduce, edit, publish, and publicly present the materials for artistic and documentary purposes, including in virtual environments (e.g., VRChat), while copyright remains with the author."""
                 ]
             ]
         , case model.notice of
