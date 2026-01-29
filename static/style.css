@@ -12,6 +12,14 @@ body {
     line-height: 1.3;
 }
 
+a {
+    color: white;
+}
+
+a:hover {
+    color: #eee;
+}
+
 .content-wrapper {
     display: flex;
     justify-content: center;

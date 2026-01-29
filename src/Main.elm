@@ -484,7 +484,11 @@ viewInvitationText =
     Html.p
         [ Attrs.class "invitation-text" ]
         [ Html.text "With "
-        , Html.span [ Attrs.style "text-decoration" "underline" ] [ Html.text "The last Entry" ]
+        , Html.a
+            [ Attrs.style "text-decoration" "underline"
+            , Attrs.href "https://schauspielhaus-graz.buehnen-graz.com/produktion/the-last-entry/"
+            ]
+            [ Html.text "The last Entry" ]
         , Html.text
             """, SOAP invites you to share your personal experiences of data
             loss on the internet. We want to hear your stories and memories
