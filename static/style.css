@@ -88,9 +88,7 @@ body {
     align-items: center;
     justify-content: center;
     width: 30px;
-    font-size: 14px;
     letter-spacing: 2px;
-    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -263,7 +261,6 @@ textarea {
     background-color: white;
     color: #2a2cb3;
     font-family: 'Hero New', sans-serif;
-    font-size: 16px;
     box-sizing: border-box;
     transition: all 0.2s;
     font-style: italic;
@@ -291,7 +288,6 @@ textarea {
 }
 
 label {
-    font-size: 14px;
     letter-spacing: 1px;
 }
 
@@ -306,7 +302,6 @@ label {
 .errors {
     color: rgba(255, 255, 255, 0.9);
     font-weight: 400;
-    font-size: 14px;
     margin: 4px 0 0 0;
     background-color: rgba(255, 100, 100, 0.3);
     padding: 8px;
@@ -320,8 +315,6 @@ input[type="submit"] {
     border: 2px solid rgba(255, 255, 255, 0.4);
     padding: 12px 32px;
     font-family: 'Hero New', sans-serif;
-    font-size: 16px;
-    font-weight: 400;
     letter-spacing: 2px;
     cursor: pointer;
     margin-top: 16px;
@@ -360,7 +353,6 @@ input[type="submit"]:disabled {
     border: 2px solid;
     background-color: rgba(43, 44, 179, 0.95);
     backdrop-filter: blur(10px);
-    font-size: 14px;
     z-index: 100;
     text-align: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -416,7 +408,6 @@ input[type="submit"]:disabled {
 
 .progress-percentage {
     color: rgba(255, 255, 255, 0.9);
-    font-size: 14px;
     text-align: center;
     margin-bottom: 16px;
     letter-spacing: 1px;
@@ -433,7 +424,6 @@ input[type="submit"]:disabled {
     border: 2px solid rgba(255, 255, 255, 0.4);
     padding: 10px 20px;
     font-family: 'Hero New', sans-serif;
-    font-size: 14px;
     font-weight: 400;
     letter-spacing: 2px;
     cursor: pointer;
