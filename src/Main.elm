@@ -487,6 +487,7 @@ viewInvitationText =
         , Html.a
             [ Attrs.style "text-decoration" "underline"
             , Attrs.href "https://schauspielhaus-graz.buehnen-graz.com/produktion/the-last-entry/"
+            , Attrs.target "_blank"
             ]
             [ Html.text "The last Entry" ]
         , Html.text
