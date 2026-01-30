@@ -1,7 +1,7 @@
 { pkgs }:
 
 let
-  # Nginx configuration for development
+  # Nginx configuration for development using OpenResty (nginx with Lua)
   nginxConf = pkgs.writeText "nginx.conf" ''
     daemon off;
     error_log stderr;
@@ -13,7 +13,7 @@ let
 
     http {
       client_max_body_size 10M;  # Increase to your needs
-      include ${pkgs.nginx}/conf/mime.types;
+      include ${pkgs.openresty}/nginx/conf/mime.types;
       default_type application/octet-stream;
 
       access_log /dev/stdout;
@@ -46,11 +46,36 @@ let
         }
 
         location /api/ {
-          proxy_pass http://unix:/tmp/postgrest-graveyard.sock:/;
+          proxy_http_version 1.1;
+          proxy_cache_bypass $http_upgrade;
+
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Host $host;
+          proxy_set_header X-Forwarded-Port $server_port;
+
+          access_by_lua_block {
+            local headers = ngx.req.get_headers()
+            local auth_header = headers["Authorization"]
+            local cookie_value = headers["Cookie"] or ""
+            local auth_cookie = cookie_value:match("authorization=([^;]+)")
+
+            if auth_header and not auth_cookie then
+              ngx.ctx.set_auth_cookie = auth_header
+            elseif not auth_header and auth_cookie then
+              ngx.req.set_header("Authorization", auth_cookie)
+            end
+          }
+
+          header_filter_by_lua_block {
+            if ngx.ctx.set_auth_cookie then
+              ngx.header["Set-Cookie"] = "authorization=" .. ngx.ctx.set_auth_cookie .. "; Path=/; HttpOnly"
+            end
+          }
+
+          proxy_pass http://unix:/tmp/postgrest-graveyard.sock:/;
         }
       }
     }
@@ -67,7 +92,7 @@ let
     sed "s|BACK_OFFICE_PATH|$PWD/back-office/static|g; s|SUBMISSIONS_PATH|$PWD/static|g" ${nginxConf} > "$NGINX_CONF"
 
     # Start nginx (redirect stderr to suppress default error log warning)
-    ${pkgs.nginx}/bin/nginx -c "$NGINX_CONF" 2>&1 | grep -v "could not open error log file" | grep -v "nginx: \[alert\]" &
+    ${pkgs.openresty}/bin/openresty -c "$NGINX_CONF" 2>&1 | grep -v "could not open error log file" | grep -v "nginx: \[alert\]" &
     NGINX_PID=$!
 
     cleanup() {
@@ -92,5 +117,5 @@ let
 in
 {
   scripts = [ run-nginx ];
-  buildInputs = [ pkgs.nginx ];
+  buildInputs = [ pkgs.openresty ];
 }

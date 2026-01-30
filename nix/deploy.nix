@@ -222,6 +222,7 @@ in
 
     services.nginx = {
       enable = true;
+      package = pkgs.openresty;
 
       virtualHosts."${cfg.domain}" = {
         forceSSL = true;
@@ -249,6 +250,27 @@ in
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+
+            access_by_lua_block {
+              local headers = ngx.req.get_headers()
+              local auth_header = headers["Authorization"]
+              local cookie_value = headers["Cookie"] or ""
+              local auth_cookie = cookie_value:match("authorization=([^;]+)")
+
+              if auth_header and not auth_cookie then
+                ngx.ctx.set_auth_cookie = auth_header
+              elseif not auth_header and auth_cookie then
+                ngx.req.set_header("Authorization", auth_cookie)
+              end
+            }
+
+            header_filter_by_lua_block {
+              if ngx.ctx.set_auth_cookie then
+                ngx.header["Set-Cookie"] = "authorization=" .. ngx.ctx.set_auth_cookie .. "; Path=/; Secure; HttpOnly"
+              end
+            }
           '';
         };
       };
