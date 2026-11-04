@@ -4,21 +4,45 @@ with lib;
 
 let
   cfg = config.services.graveyard;
-  graveyardCfg = cfg;
+
+  # Vector reads the token from its systemd credential; the string option puts
+  # it in the world-readable store.
+  tokenFile =
+    if cfg.betterStackTokenFile != null then cfg.betterStackTokenFile
+    else pkgs.writeText "graveyard-better-stack-token" cfg.betterStackToken;
 in
 {
-  options.services.graveyard.betterStackToken = mkOption {
-    type = types.nullOr types.str;
-    default = null;
-    description = "Better Stack source token for log shipping. When set, enables Vector to forward nginx and PostgREST logs.";
-    example = "your-betterstack-source-token";
+  options.services.graveyard = {
+    betterStackToken = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Better Stack source token (stored world-readable; prefer betterStackTokenFile). Setting either enables log shipping.";
+      example = "your-betterstack-source-token";
+    };
+    betterStackTokenFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Root-only file holding the Better Stack source token";
+      example = "/run/agenix/graveyard-better-stack-token";
+    };
   };
 
-  config = mkIf (cfg.enable && cfg.betterStackToken != null) {
+  config = mkIf (cfg.enable && (cfg.betterStackToken != null || cfg.betterStackTokenFile != null)) {
+    assertions = [{
+      assertion = cfg.betterStackToken == null || cfg.betterStackTokenFile == null;
+      message = "services.graveyard: set at most one of betterStackToken and betterStackTokenFile";
+    }];
+
     services.vector = {
       enable = true;
 
       settings = {
+        secret.graveyard = {
+          type = "directory";
+          path = "/run/credentials/vector.service";
+          remove_trailing_whitespace = true;
+        };
+
         sources = {
           nginx_logs = {
             type = "file";
@@ -59,7 +83,7 @@ in
             encoding.codec = "json";
             auth = {
               strategy = "bearer";
-              token = cfg.betterStackToken;
+              token = "SECRET[graveyard.better_stack_token]";
             };
           };
         };
@@ -68,7 +92,10 @@ in
 
     systemd.services.vector = {
       after = [ "graveyard.service" "nginx.service" ];
-      serviceConfig.SupplementaryGroups = [ "web" ];
+      serviceConfig = {
+        SupplementaryGroups = [ "web" ];
+        LoadCredential = [ "better_stack_token:${tokenFile}" ];
+      };
     };
   };
 }
