@@ -12,12 +12,12 @@ let
   goose = pkgs.goose;
   migrationsDir = ../database/migrations;
 
-  # Fetch pre-built Elm application from GitHub releases
+  # Pre-built Elm applications (services.graveyard.assets)
   elmApp = pkgs.stdenv.mkDerivation {
     pname = "graveyard-elm";
     version = "latest";
 
-    src = builtins.fetchurl "https://github.com/maca/graveyard-call/releases/latest/download/main.js";
+    src = cfg.assets.main;
 
     dontUnpack = true;
 
@@ -27,12 +27,11 @@ let
     '';
   };
 
-  # Fetch pre-built back-office Elm application from GitHub releases
   backOfficeElmApp = pkgs.stdenv.mkDerivation {
     pname = "graveyard-backoffice-elm";
     version = "latest";
 
-    src = builtins.fetchurl "https://github.com/maca/graveyard-call/releases/latest/download/back-office.js";
+    src = cfg.assets.backOffice;
 
     dontUnpack = true;
 
@@ -67,14 +66,28 @@ let
     cp ${../back-office/static/postgrest-admin.css} $out/postgrest-admin.css
   '';
 
-  # PostgREST config file
+  # Secrets reach the services as systemd credentials; the string options put
+  # them in the world-readable store.
+  jwtSecretFile =
+    if cfg.jwtSecretFile != null then cfg.jwtSecretFile
+    else pkgs.writeText "graveyard-jwt-secret" cfg.jwtSecret;
+  adminPasswordFile =
+    if cfg.admin.passwordFile != null then cfg.admin.passwordFile
+    else pkgs.writeText "graveyard-admin-password" cfg.admin.password;
+
+  # PostgREST config file; the JWT secret comes from PGRST_JWT_SECRET.
   postgrestConf = pkgs.writeText "postgrest.conf" ''
     db-uri = "postgres:///?host=${cfg.databaseSocket}&dbname=${serviceName}"
     db-schemas = "graveyard"
     db-anon-role = "anonymous"
-    jwt-secret = "${cfg.jwtSecret}"
     server-unix-socket = "${postgrestSocket}"
     log-level = "info"
+  '';
+
+  postgrestStart = pkgs.writeShellScript "graveyard-postgrest" ''
+    PGRST_JWT_SECRET=$(< "$CREDENTIALS_DIRECTORY/jwt-secret")
+    export PGRST_JWT_SECRET
+    exec ${pkgs.postgrest}/bin/postgrest ${postgrestConf}
   '';
 in
 {
@@ -94,9 +107,32 @@ in
     };
 
     jwtSecret = mkOption {
-      type = types.str;
-      description = "JWT secret for PostgREST authentication";
+      type = types.nullOr types.str;
+      default = null;
+      description = "JWT secret for PostgREST (stored world-readable; prefer jwtSecretFile)";
       example = "DL+P8+muauKgOSqRKqIKMkjcUpLZ5ajXScgA965i/Bg=";
+    };
+
+    jwtSecretFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Root-only file holding the JWT secret";
+      example = "/run/agenix/graveyard-jwt-secret";
+    };
+
+    assets = {
+      main = mkOption {
+        type = types.path;
+        default = builtins.fetchurl "https://github.com/maca/graveyard-call/releases/latest/download/main.js";
+        defaultText = literalExpression ''builtins.fetchurl "…/releases/latest/download/main.js"'';
+        description = "Built Elm application (the default is unpinned, so a flake must set it)";
+      };
+      backOffice = mkOption {
+        type = types.path;
+        default = builtins.fetchurl "https://github.com/maca/graveyard-call/releases/latest/download/back-office.js";
+        defaultText = literalExpression ''builtins.fetchurl "…/releases/latest/download/back-office.js"'';
+        description = "Built back-office Elm application";
+      };
     };
 
     accessLog = mkOption {
@@ -114,9 +150,16 @@ in
             example = "admin@example.com";
           };
           password = mkOption {
-            type = types.str;
-            description = "Admin user password for back-office login";
+            type = types.nullOr types.str;
+            default = null;
+            description = "Admin user password (stored world-readable; prefer passwordFile)";
             example = "secure-password-here";
+          };
+          passwordFile = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = "Root-only file holding the admin password";
+            example = "/run/agenix/graveyard-admin-password";
           };
         };
       };
@@ -125,6 +168,17 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = (cfg.jwtSecret == null) != (cfg.jwtSecretFile == null);
+        message = "services.graveyard: set exactly one of jwtSecret and jwtSecretFile";
+      }
+      {
+        assertion = (cfg.admin.password == null) != (cfg.admin.passwordFile == null);
+        message = "services.graveyard.admin: set exactly one of password and passwordFile";
+      }
+    ];
+
     users.users.graveyard = {
       isSystemUser = true;
       group = "web";
@@ -146,7 +200,8 @@ in
         User = serviceName;
         Group = "web";
 
-        ExecStart = "${pkgs.postgrest}/bin/postgrest ${postgrestConf}";
+        ExecStart = postgrestStart;
+        LoadCredential = [ "jwt-secret:${jwtSecretFile}" ];
 
         Restart = "on-failure";
         RestartSec = "5s";
@@ -196,6 +251,10 @@ in
         User = "postgres";
         Group = "postgres";
         RemainAfterExit = true;
+        LoadCredential = [
+          "jwt-secret:${jwtSecretFile}"
+          "admin-password:${adminPasswordFile}"
+        ];
       };
 
       script = ''
@@ -204,8 +263,14 @@ in
         echo "Running goose migrations..."
         ${goose}/bin/goose -dir ${migrationsDir} postgres "host=${cfg.databaseSocket} dbname=${serviceName} sslmode=disable" up
 
+        # psql reads and quotes the secrets itself, keeping them out of argv.
+        creds=/run/credentials/graveyard-migrate.service
+
         echo "Setting JWT secret from configuration..."
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "ALTER DATABASE ${serviceName} SET app.jwt_secret = '${cfg.jwtSecret}';"
+        ${config.services.postgresql.package}/bin/psql -v ON_ERROR_STOP=1 -d ${serviceName} <<SQL
+        \\set jwt \`cat $creds/jwt-secret\`
+        ALTER DATABASE ${serviceName} SET app.jwt_secret = :'jwt';
+        SQL
 
         echo "Granting roles to ${serviceName} user for PostgREST..."
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "GRANT anonymous TO ${serviceName} WITH INHERIT FALSE, SET TRUE;" || true
@@ -213,7 +278,11 @@ in
         ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "GRANT admin TO ${serviceName} WITH INHERIT FALSE, SET TRUE;" || true
 
         echo "Creating admin user..."
-        ${config.services.postgresql.package}/bin/psql -d ${serviceName} -c "INSERT INTO graveyard.users (email, password) VALUES ('${cfg.admin.email}', crypt('${cfg.admin.password}', gen_salt('bf'))) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password;"
+        ${config.services.postgresql.package}/bin/psql -v ON_ERROR_STOP=1 -v email=${escapeShellArg cfg.admin.email} -d ${serviceName} <<SQL
+        \\set pw \`cat $creds/admin-password\`
+        INSERT INTO graveyard.users (email, password) VALUES (:'email', crypt(:'pw', gen_salt('bf')))
+          ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password;
+        SQL
 
         echo "Database migrations completed"
       '';
